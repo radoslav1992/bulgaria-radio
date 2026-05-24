@@ -27,13 +27,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,8 +56,7 @@ import com.example.ui.LanguagesUiState
 import com.example.ui.RadioViewModel
 import com.example.ui.RadioViewModelFactory
 import com.example.ui.StationsUiState
-import com.example.ui.theme.MyApplicationTheme
-import kotlinx.coroutines.launch
+import com.example.ui.theme.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +78,7 @@ class MainActivity : ComponentActivity() {
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = WalnutDark
                 ) {
                     RadioAppMainScreen(viewModel)
                 }
@@ -92,10 +90,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadioAppMainScreen(viewModel: RadioViewModel) {
-    val coroutineScope = rememberCoroutineScope()
     var currentTab by remember { mutableStateOf("discover") }
 
-    // Collect variables
     val searchResults by viewModel.stationsState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val recentlyPlayed by viewModel.recentlyPlayed.collectAsStateWithLifecycle()
@@ -109,20 +105,21 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
     var showLanguageSheet by remember { mutableStateOf(false) }
     var showFullscreenPlayer by remember { mutableStateOf(false) }
 
-    // Custom deep background brush
-    val backgroundBrush = Brush.verticalGradient(
+    val woodGrainBackground = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF0F1B29),
-            Color(0xFF131F2E),
-            Color(0xFF0B111A)
+            Color(0xFF1A0F07),
+            Color(0xFF231509),
+            Color(0xFF1A0F07),
+            Color(0xFF150B05),
+            Color(0xFF1E1109)
         )
     )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         bottomBar = {
             Column {
-                // Persistent Player bar at the bottom
                 currentStation?.let { station ->
                     MiniPlayerBar(
                         station = station,
@@ -135,46 +132,51 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 }
 
                 NavigationBar(
-                    containerColor = Color(0xFF080D14),
-                    tonalElevation = 8.dp
+                    containerColor = Color(0xFF0D0704),
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.border(
+                        width = 1.dp,
+                        color = AmberGlow.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
+                    )
                 ) {
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Explore, contentDescription = "Discover") },
-                        label = { Text("Discover") },
+                        icon = { Icon(Icons.Default.Radio, contentDescription = "Tune In") },
+                        label = { Text("Tune In", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
                         selected = currentTab == "discover",
                         onClick = { currentTab = "discover" },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00ADB5),
-                            selectedTextColor = Color(0xFF00ADB5),
-                            indicatorColor = Color(0xFF132A33),
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
+                            selectedIconColor = AmberBright,
+                            selectedTextColor = AmberGlow,
+                            indicatorColor = MahoganyPanel.copy(alpha = 0.6f),
+                            unselectedIconColor = FadedLabel,
+                            unselectedTextColor = FadedLabel
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Favorite, contentDescription = "Favorites") },
-                        label = { Text("Favorites") },
+                        icon = { Icon(Icons.Default.Star, contentDescription = "Presets") },
+                        label = { Text("Presets", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
                         selected = currentTab == "favorites",
                         onClick = { currentTab = "favorites" },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00ADB5),
-                            selectedTextColor = Color(0xFF00ADB5),
-                            indicatorColor = Color(0xFF132A33),
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
+                            selectedIconColor = AmberBright,
+                            selectedTextColor = AmberGlow,
+                            indicatorColor = MahoganyPanel.copy(alpha = 0.6f),
+                            unselectedIconColor = FadedLabel,
+                            unselectedTextColor = FadedLabel
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.History, contentDescription = "Recents") },
-                        label = { Text("Recents") },
+                        icon = { Icon(Icons.Default.History, contentDescription = "History") },
+                        label = { Text("History", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
                         selected = currentTab == "recents",
                         onClick = { currentTab = "recents" },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00ADB5),
-                            selectedTextColor = Color(0xFF00ADB5),
-                            indicatorColor = Color(0xFF132A33),
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
+                            selectedIconColor = AmberBright,
+                            selectedTextColor = AmberGlow,
+                            indicatorColor = MahoganyPanel.copy(alpha = 0.6f),
+                            unselectedIconColor = FadedLabel,
+                            unselectedTextColor = FadedLabel
                         )
                     )
                 }
@@ -184,7 +186,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundBrush)
+                .background(woodGrainBackground)
                 .padding(innerPadding)
         ) {
             when (currentTab) {
@@ -212,7 +214,6 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
         }
     }
 
-    // Modal Bottom Sheets for countries and languages selection
     if (showLocationSheet) {
         CountrySelectionSheet(
             viewModel = viewModel,
@@ -235,7 +236,6 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
         )
     }
 
-    // Full screen detailed Player Dialog
     if (showFullscreenPlayer && currentStation != null) {
         val activeStation = currentStation!!
         FullscreenPlayerDialog(
@@ -268,87 +268,92 @@ fun DiscoverTabScreen(
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Spacer(modifier = Modifier.height(12.dp))
-        // Styled Cosmic Header
+
         Text(
-            text = "Global Waves",
-            fontSize = 30.sp,
+            text = "World Radio",
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            fontFamily = FontFamily.Serif,
+            color = AmberGlow
         )
         Text(
-            text = "Explore live streams from all around the globe",
+            text = "Tune into stations from across the globe",
             fontSize = 13.sp,
-            color = Color(0xFFA1B0C4)
+            fontFamily = FontFamily.Serif,
+            color = FadedLabel
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Premium Search Card
+        // Vintage-styled search field
         TextField(
             value = query,
             onValueChange = {
                 viewModel.updateSearchQuery(it)
                 viewModel.performSearch()
             },
-            placeholder = { Text("Search by station name...", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+            placeholder = { Text("Search stations...", color = FadedLabel, fontFamily = FontFamily.Serif) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberGlow.copy(alpha = 0.7f)) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     IconButton(onClick = {
                         viewModel.updateSearchQuery("")
                         viewModel.performSearch()
                     }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.Gray)
+                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = FadedLabel)
                     }
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFF1B2838),
-                unfocusedContainerColor = Color(0xFF1B2838),
-                disabledContainerColor = Color(0xFF1B2838),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                focusedContainerColor = WalnutMedium,
+                unfocusedContainerColor = WalnutMedium,
+                disabledContainerColor = WalnutMedium,
+                focusedTextColor = CreamWhite,
+                unfocusedTextColor = CreamWhite,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent
             ),
             modifier = Modifier
                 .fillMaxWidth()
+                .border(1.dp, AmberGlow.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                 .testTag("station_search_input")
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Horizontal filter selections
+        // Vintage filter chips
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Location Select Chip
             FilterChip(
                 selected = selectedCountry != null,
                 onClick = onOpenLocationSheet,
-                label = { 
+                label = {
                     Text(
-                        text = selectedCountry?.name ?: "Any Location",
+                        text = selectedCountry?.name ?: "Any Region",
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = FontFamily.Serif
                     )
                 },
                 leadingIcon = { Icon(Icons.Outlined.Place, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = Color(0xFF14202F),
-                    labelColor = Color.LightGray,
-                    selectedContainerColor = Color(0xFF00ADB5).copy(alpha = 0.2f),
-                    selectedLabelColor = Color(0xFF00ADB5)
+                    containerColor = WalnutLight,
+                    labelColor = ParchmentText,
+                    selectedContainerColor = AmberGlow.copy(alpha = 0.15f),
+                    selectedLabelColor = AmberBright,
+                    iconColor = FadedLabel,
+                    selectedLeadingIconColor = AmberBright
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedCountry != null,
-                    borderColor = Color(0xFF26394F),
-                    selectedBorderColor = Color(0xFF00ADB5),
+                    borderColor = LeatherBrown.copy(alpha = 0.5f),
+                    selectedBorderColor = AmberGlow.copy(alpha = 0.6f),
                     borderWidth = 1.dp
                 ),
                 modifier = Modifier
@@ -356,29 +361,31 @@ fun DiscoverTabScreen(
                     .height(48.dp)
             )
 
-            // Language Select Chip
             FilterChip(
                 selected = selectedLanguage != null,
                 onClick = onOpenLanguageSheet,
-                label = { 
+                label = {
                     Text(
                         text = selectedLanguage?.name?.replaceFirstChar { it.uppercase() } ?: "Any Language",
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = FontFamily.Serif
                     )
                 },
                 leadingIcon = { Icon(Icons.Outlined.Language, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = Color(0xFF14202F),
-                    labelColor = Color.LightGray,
-                    selectedContainerColor = Color(0xFF00ADB5).copy(alpha = 0.2f),
-                    selectedLabelColor = Color(0xFF00ADB5)
+                    containerColor = WalnutLight,
+                    labelColor = ParchmentText,
+                    selectedContainerColor = AmberGlow.copy(alpha = 0.15f),
+                    selectedLabelColor = AmberBright,
+                    iconColor = FadedLabel,
+                    selectedLeadingIconColor = AmberBright
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selectedLanguage != null,
-                    borderColor = Color(0xFF26394F),
-                    selectedBorderColor = Color(0xFF00ADB5),
+                    borderColor = LeatherBrown.copy(alpha = 0.5f),
+                    selectedBorderColor = AmberGlow.copy(alpha = 0.6f),
                     borderWidth = 1.dp
                 ),
                 modifier = Modifier
@@ -386,7 +393,6 @@ fun DiscoverTabScreen(
                     .height(48.dp)
             )
 
-            // Reset chip
             if (selectedCountry != null || selectedLanguage != null || query.isNotEmpty()) {
                 IconButton(
                     onClick = {
@@ -397,25 +403,25 @@ fun DiscoverTabScreen(
                     },
                     modifier = Modifier
                         .size(48.dp)
-                        .background(Color(0xFF231C24), shape = CircleShape)
+                        .background(RadioRed.copy(alpha = 0.15f), shape = CircleShape)
+                        .border(1.dp, RadioRed.copy(alpha = 0.3f), CircleShape)
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Reset Filters", tint = Color(0xFFE94560))
+                    Icon(Icons.Default.Refresh, contentDescription = "Reset Filters", tint = RadioRed)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Central States rendering
         when (searchResults) {
             is StationsUiState.Idle -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF00ADB5))
+                    CircularProgressIndicator(color = AmberGlow)
                 }
             }
             is StationsUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF00ADB5))
+                    CircularProgressIndicator(color = AmberGlow)
                 }
             }
             is StationsUiState.Error -> {
@@ -424,12 +430,15 @@ fun DiscoverTabScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = TubeOrange, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = searchResults.message, color = Color.LightGray, textAlign = TextAlign.Center)
+                    Text(text = searchResults.message, color = ParchmentText, textAlign = TextAlign.Center, fontFamily = FontFamily.Serif)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { viewModel.fetchFeatured() }) {
-                        Text("Retry Connection")
+                    Button(
+                        onClick = { viewModel.fetchFeatured() },
+                        colors = ButtonDefaults.buttonColors(containerColor = MahoganyPanel)
+                    ) {
+                        Text("Retry Connection", fontFamily = FontFamily.Serif, color = AmberGlow)
                     }
                 }
             }
@@ -441,9 +450,9 @@ fun DiscoverTabScreen(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                        Icon(Icons.Default.Info, contentDescription = null, tint = FadedLabel, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "No radio stations match your search filters.", color = Color.Gray, textAlign = TextAlign.Center)
+                        Text(text = "No stations found on this frequency.", color = FadedLabel, textAlign = TextAlign.Center, fontFamily = FontFamily.Serif)
                     }
                 } else {
                     LazyColumn(
@@ -474,10 +483,11 @@ fun StationRowItem(
     onToggleFavorite: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF14202F).copy(alpha = 0.8f)),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = WalnutMedium.copy(alpha = 0.9f)),
         modifier = Modifier
             .fillMaxWidth()
+            .border(1.dp, AmberGlow.copy(alpha = 0.1f), RoundedCornerShape(10.dp))
             .clickable { onPlay() }
     ) {
         Row(
@@ -486,12 +496,17 @@ fun StationRowItem(
                 .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Favicon image loader
+            // Station icon with vintage dial look
             Box(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF1F2E42)),
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(WalnutLight, VinylBlack)
+                        )
+                    )
+                    .border(1.dp, BrassGold.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (station.favicon.isNotBlank()) {
@@ -499,24 +514,23 @@ fun StationRowItem(
                         model = station.favicon,
                         contentDescription = "Station Logo",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
                     )
                 } else {
-                    Icon(Icons.Default.Radio, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Radio, contentDescription = null, tint = AmberGlow.copy(alpha = 0.7f), modifier = Modifier.size(24.dp))
                 }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Text Metadata
             Column(
-                modifier = Modifier
-                    .weight(1.0f)
+                modifier = Modifier.weight(1.0f)
             ) {
                 Text(
                     text = station.name,
-                    color = Color.White,
+                    color = CreamWhite,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 15.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -527,35 +541,36 @@ fun StationRowItem(
                         station.country.ifEmpty { null },
                         station.language.ifEmpty { null }
                     ).joinToString(" • "),
-                    color = Color.Gray,
+                    color = FadedLabel,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 if (station.tags.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     val firstTags = station.tags.split(",").take(2).joinToString(" | ")
                     Text(
                         text = firstTags.uppercase(),
-                        color = Color(0xFF00ADB5),
+                        color = BrassGold,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
+                        fontFamily = FontFamily.Serif,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            // Interactive Controls
             IconButton(
                 onClick = onToggleFavorite,
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
-                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                    imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
                     contentDescription = "Favorite Toggle",
-                    tint = if (isFav) Color(0xFFE94560) else Color.LightGray
+                    tint = if (isFav) AmberBright else FadedLabel
                 )
             }
         }
@@ -575,15 +590,17 @@ fun FavoritesTabScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Your Favorites",
-            fontSize = 30.sp,
+            text = "Preset Stations",
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            fontFamily = FontFamily.Serif,
+            color = AmberGlow
         )
         Text(
-            text = "Your primary curated internet radio channels",
+            text = "Your saved radio presets",
             fontSize = 13.sp,
-            color = Color(0xFFA1B0C4)
+            fontFamily = FontFamily.Serif,
+            color = FadedLabel
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -594,22 +611,24 @@ fun FavoritesTabScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    imageVector = Icons.Default.FavoriteBorder,
+                    imageVector = Icons.Outlined.StarBorder,
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = FadedLabel,
                     modifier = Modifier.size(64.dp)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "No saved channels yet.",
-                    color = Color.White,
+                    text = "No presets saved yet.",
+                    color = CreamWhite,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "Stars added while playing or exploring will appear organized here.",
-                    color = Color.Gray,
+                    text = "Star your favorite stations to save them as presets for quick tuning.",
+                    color = FadedLabel,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 24.dp)
@@ -641,10 +660,11 @@ fun FavoriteGridCard(
     onRemove: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF14202F).copy(alpha = 0.8f)),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = WalnutMedium),
         modifier = Modifier
             .fillMaxWidth()
+            .border(1.dp, AmberGlow.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
             .clickable { onPlay() }
     ) {
         Column(
@@ -660,19 +680,23 @@ fun FavoriteGridCard(
                 IconButton(
                     onClick = onRemove,
                     modifier = Modifier
-                        .size(36.dp)
-                        .background(Color(0xFF0F1B29).copy(alpha = 0.6f), CircleShape)
+                        .size(32.dp)
+                        .background(WalnutDark.copy(alpha = 0.6f), CircleShape)
                 ) {
-                    Icon(Icons.Default.Clear, contentDescription = "Remove Favorite", tint = Color.LightGray, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Clear, contentDescription = "Remove Preset", tint = FadedLabel, modifier = Modifier.size(14.dp))
                 }
             }
 
-            // Rounded Square Logo Container
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF1F2E42)),
+                    .size(68.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(MahoganyPanel, VinylBlack)
+                        )
+                    )
+                    .border(2.dp, BrassGold.copy(alpha = 0.4f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (station.favicon.isNotBlank()) {
@@ -680,10 +704,10 @@ fun FavoriteGridCard(
                         model = station.favicon,
                         contentDescription = "Station Logo",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
                     )
                 } else {
-                    Icon(Icons.Default.Radio, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.Radio, contentDescription = null, tint = AmberGlow.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
                 }
             }
 
@@ -691,9 +715,10 @@ fun FavoriteGridCard(
 
             Text(
                 text = station.name,
-                color = Color.White,
+                color = CreamWhite,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
+                fontFamily = FontFamily.Serif,
+                fontSize = 13.sp,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -701,8 +726,9 @@ fun FavoriteGridCard(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = station.country.ifEmpty { "Global Stream" },
-                color = Color.Gray,
+                text = station.country.ifEmpty { "Worldwide" },
+                color = FadedLabel,
+                fontFamily = FontFamily.Serif,
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -727,15 +753,17 @@ fun RecentsTabScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Recently Played",
-            fontSize = 30.sp,
+            text = "Listening Log",
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            fontFamily = FontFamily.Serif,
+            color = AmberGlow
         )
         Text(
-            text = "Your stream history is kept safe locally on your device",
+            text = "Stations you've tuned into recently",
             fontSize = 13.sp,
-            color = Color(0xFFA1B0C4)
+            fontFamily = FontFamily.Serif,
+            color = FadedLabel
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -748,20 +776,22 @@ fun RecentsTabScreen(
                 Icon(
                     imageVector = Icons.Default.History,
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = FadedLabel,
                     modifier = Modifier.size(64.dp)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "No history recorded.",
-                    color = Color.White,
+                    text = "Nothing in the log yet.",
+                    color = CreamWhite,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "Once you connect and tune into a station, it will instantly appear in this history log.",
-                    color = Color.Gray,
+                    text = "Once you tune into a station, it will be recorded here.",
+                    color = FadedLabel,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 24.dp)
@@ -796,25 +826,29 @@ fun MiniPlayerBar(
     onExpand: () -> Unit
 ) {
     val isFav = favorites.any { it.stationuuid == station.stationuuid }
-    
-    // Rotating Album Cover Animation Setup
+
     val infiniteTransition = rememberInfiniteTransition()
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(8000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            animation = tween(1500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
         )
     )
 
     val isPlayingMode = playbackState is RadioPlaybackState.Playing
 
     Card(
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF131F2E)),
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1109)),
         modifier = Modifier
             .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = AmberGlow.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+            )
             .clickable { onExpand() }
             .testTag("mini_player_bar")
     ) {
@@ -824,17 +858,20 @@ fun MiniPlayerBar(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Rotating image
+            // Glowing indicator light
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .graphicsLayer {
-                        if (isPlayingMode) {
-                            rotationZ = rotation
-                        }
-                    }
                     .clip(CircleShape)
-                    .background(Color(0xFF1F2E42)),
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                if (isPlayingMode) DialGreen.copy(alpha = glowAlpha) else FadedLabel.copy(alpha = 0.3f),
+                                VinylBlack
+                            )
+                        )
+                    )
+                    .border(2.dp, BrassGold.copy(alpha = 0.4f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (station.favicon.isNotBlank()) {
@@ -842,24 +879,23 @@ fun MiniPlayerBar(
                         model = station.favicon,
                         contentDescription = "Station Logo",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
                     )
                 } else {
-                    Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Radio, contentDescription = null, tint = AmberGlow, modifier = Modifier.size(20.dp))
                 }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Station details
             Column(
-                modifier = Modifier
-                    .weight(1f)
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = station.name,
-                    color = Color.White,
+                    color = CreamWhite,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -869,19 +905,19 @@ fun MiniPlayerBar(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val statusText = when (playbackState) {
-                        is RadioPlaybackState.Playing -> "Tuned In"
-                        is RadioPlaybackState.Buffering -> "Buffering..."
-                        is RadioPlaybackState.Paused -> "Paused"
-                        is RadioPlaybackState.Error -> "Stream Error"
+                        is RadioPlaybackState.Playing -> "On Air"
+                        is RadioPlaybackState.Buffering -> "Tuning..."
+                        is RadioPlaybackState.Paused -> "Standby"
+                        is RadioPlaybackState.Error -> "No Signal"
                         else -> "Connecting"
                     }
                     val statusColor = when (playbackState) {
-                        is RadioPlaybackState.Playing -> Color(0xFF00ADB5)
-                        is RadioPlaybackState.Buffering -> Color.Yellow
-                        is RadioPlaybackState.Error -> Color.Red
-                        else -> Color.Gray
+                        is RadioPlaybackState.Playing -> DialGreen
+                        is RadioPlaybackState.Buffering -> AmberBright
+                        is RadioPlaybackState.Error -> RadioRed
+                        else -> FadedLabel
                     }
-                    
+
                     Box(
                         modifier = Modifier
                             .size(6.dp)
@@ -889,7 +925,8 @@ fun MiniPlayerBar(
                     )
                     Text(
                         text = statusText,
-                        color = Color.Gray,
+                        color = FadedLabel,
+                        fontFamily = FontFamily.Serif,
                         fontSize = 11.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -897,35 +934,37 @@ fun MiniPlayerBar(
                 }
             }
 
-            // Controls
             IconButton(
                 onClick = onToggleFavorite,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
-                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Like Button",
-                    tint = if (isFav) Color(0xFFE94560) else Color.LightGray
+                    imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
+                    contentDescription = "Preset Button",
+                    tint = if (isFav) AmberBright else FadedLabel
                 )
             }
 
             IconButton(
                 onClick = onTogglePlayPause,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(MahoganyPanel, CircleShape)
+                    .border(1.dp, BrassGold.copy(alpha = 0.4f), CircleShape)
             ) {
                 when (playbackState) {
                     is RadioPlaybackState.Buffering -> {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color(0xFF00ADB5),
+                            modifier = Modifier.size(18.dp),
+                            color = AmberGlow,
                             strokeWidth = 2.dp
                         )
                     }
                     is RadioPlaybackState.Playing -> {
-                        Icon(Icons.Default.Pause, contentDescription = "Pause button", tint = Color.White)
+                        Icon(Icons.Default.Pause, contentDescription = "Pause", tint = AmberGlow)
                     }
                     else -> {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Play button", tint = Color.White)
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = AmberGlow)
                     }
                 }
             }
@@ -947,14 +986,13 @@ fun FullscreenPlayerDialog(
     val isFav = favorites.any { it.stationuuid == station.stationuuid }
     var scaleVolume by remember { mutableStateOf(1.0f) }
 
-    // Rotating Animation for vinyl inside Full screen Player Dialogue
     val infiniteTransition = rememberInfiniteTransition()
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
+    val dialGlow by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.8f,
         animationSpec = infiniteRepeatable(
-            animation = tween(12000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
         )
     )
 
@@ -966,7 +1004,7 @@ fun FullscreenPlayerDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF0A1017)
+            color = VinylBlack
         ) {
             Box(
                 modifier = Modifier
@@ -974,8 +1012,9 @@ fun FullscreenPlayerDialog(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF14243B),
-                                Color(0xFF0A1017)
+                                Color(0xFF2C1810),
+                                Color(0xFF1A0F07),
+                                Color(0xFF0D0704)
                             )
                         )
                     )
@@ -988,7 +1027,7 @@ fun FullscreenPlayerDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Header control row
+                    // Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -997,50 +1036,67 @@ fun FullscreenPlayerDialog(
                         IconButton(
                             onClick = onDismiss,
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                                .size(44.dp)
+                                .background(WalnutMedium, CircleShape)
+                                .border(1.dp, BrassGold.copy(alpha = 0.3f), CircleShape)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Go back", tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Go back", tint = CreamWhite)
                         }
 
                         Text(
                             text = "Now Playing",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.LightGray
+                            fontFamily = FontFamily.Serif,
+                            color = AmberGlow
                         )
 
                         IconButton(
                             onClick = onToggleFavorite,
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                                .size(44.dp)
+                                .background(WalnutMedium, CircleShape)
+                                .border(1.dp, BrassGold.copy(alpha = 0.3f), CircleShape)
                         ) {
                             Icon(
-                                imageVector = if (isFav) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = "Fav button",
-                                tint = if (isFav) Color(0xFFE94560) else Color.White
+                                imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
+                                contentDescription = "Preset button",
+                                tint = if (isFav) AmberBright else CreamWhite
                             )
                         }
                     }
 
-                    // Rotating visual artwork
+                    // Vintage dial display
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(vertical = 12.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(230.dp)
-                                .border(8.dp, Color.White.copy(alpha = 0.04f), CirclesShapeStyle)
-                                .padding(12.dp)
-                                .graphicsLayer {
-                                    if (isPlayingMode) {
-                                        rotationZ = rotation
-                                    }
-                                }
-                                .clip(CirclesShapeStyle)
-                                .background(Color(0xFF111E2E)),
+                                .size(220.dp)
+                                .border(
+                                    6.dp,
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            BrassGold.copy(alpha = 0.6f),
+                                            BrassLight.copy(alpha = 0.8f),
+                                            BrassGold.copy(alpha = 0.4f)
+                                        )
+                                    ),
+                                    CircleShape
+                                )
+                                .padding(6.dp)
+                                .border(2.dp, AmberGlow.copy(alpha = if (isPlayingMode) dialGlow else 0.2f), CircleShape)
+                                .padding(4.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            WalnutLight,
+                                            VinylBlack
+                                        )
+                                    )
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             if (station.favicon.isNotBlank()) {
@@ -1051,51 +1107,57 @@ fun FullscreenPlayerDialog(
                                     modifier = Modifier.fillMaxSize()
                                 )
                             } else {
-                                Icon(Icons.Default.Radio, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
+                                Icon(Icons.Default.Radio, contentDescription = null, tint = AmberGlow.copy(alpha = 0.8f), modifier = Modifier.size(64.dp))
                             }
                         }
-                        
-                        // Active mini bouncing pulse waves mockup
+
+                        // Signal indicator bars
                         if (isPlayingMode) {
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
                             Row(
-                                modifier = Modifier.height(18.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.height(20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
                                 verticalAlignment = Alignment.Bottom
                             ) {
-                                repeat(5) { i ->
+                                repeat(7) { i ->
                                     val pulseAnim = rememberInfiniteTransition()
                                     val h by pulseAnim.animateFloat(
                                         initialValue = 4f,
-                                        targetValue = 18f,
+                                        targetValue = 20f,
                                         animationSpec = infiniteRepeatable(
-                                            animation = tween(400 + (i * 120), easing = LinearEasing),
+                                            animation = tween(500 + (i * 100), easing = LinearEasing),
                                             repeatMode = RepeatMode.Reverse
                                         )
                                     )
                                     Box(
                                         modifier = Modifier
-                                            .width(4.dp)
+                                            .width(3.dp)
                                             .height(h.dp)
-                                            .background(Color(0xFF00ADB5), RoundedCornerShape(2.dp))
+                                            .background(
+                                                if (i < 3) DialGreen
+                                                else if (i < 5) AmberGlow
+                                                else TubeOrange,
+                                                RoundedCornerShape(1.dp)
+                                            )
                                     )
                                 }
                             }
                         } else {
-                            Spacer(modifier = Modifier.height(34.dp)) // keeps spacing even
+                            Spacer(modifier = Modifier.height(40.dp))
                         }
                     }
 
-                    // Metadata display
+                    // Station info
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = station.name,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            fontFamily = FontFamily.Serif,
+                            color = CreamWhite,
                             textAlign = TextAlign.Center,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -1108,7 +1170,8 @@ fun FullscreenPlayerDialog(
                                 station.language.ifEmpty { null }
                             ).joinToString("  •  "),
                             fontSize = 14.sp,
-                            color = Color(0xFFA1B0C4),
+                            fontFamily = FontFamily.Serif,
+                            color = FadedLabel,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1125,17 +1188,18 @@ fun FullscreenPlayerDialog(
                                     Box(
                                         modifier = Modifier
                                             .padding(horizontal = 4.dp)
-                                            .background(Color(0xFF00ADB5).copy(alpha = 0.1f), RoundedCornerShape(100.dp))
+                                            .background(BrassGold.copy(alpha = 0.1f), RoundedCornerShape(100.dp))
+                                            .border(1.dp, BrassGold.copy(alpha = 0.3f), RoundedCornerShape(100.dp))
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
-                                        Text(tag.uppercase(), fontSize = 10.sp, color = Color(0xFF00ADB5), fontWeight = FontWeight.Bold)
+                                        Text(tag.uppercase(), fontSize = 10.sp, color = BrassGold, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Player buttons row
+                    // Play/Pause control
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -1144,39 +1208,66 @@ fun FullscreenPlayerDialog(
                         IconButton(
                             onClick = onTogglePlayPause,
                             modifier = Modifier
-                                .size(82.dp)
-                                .background(Color(0xFF00ADB5), CircleShape)
+                                .size(80.dp)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(MahoganyPanel, WalnutDark)
+                                    ),
+                                    CircleShape
+                                )
+                                .border(
+                                    3.dp,
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            BrassGold.copy(alpha = 0.7f),
+                                            BrassLight.copy(alpha = 0.9f),
+                                            BrassGold.copy(alpha = 0.5f)
+                                        )
+                                    ),
+                                    CircleShape
+                                )
                         ) {
                             when (playbackState) {
                                 is RadioPlaybackState.Buffering -> {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(28.dp),
-                                        color = Color.White,
+                                        color = AmberGlow,
                                         strokeWidth = 3.dp
                                     )
                                 }
                                 is RadioPlaybackState.Playing -> {
-                                    Icon(Icons.Default.Pause, contentDescription = "Play/Pause control", tint = Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.Pause, contentDescription = "Pause", tint = AmberGlow, modifier = Modifier.size(36.dp))
                                 }
                                 else -> {
-                                    Icon(Icons.Default.PlayArrow, contentDescription = "Play/Pause control", tint = Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = AmberGlow, modifier = Modifier.size(36.dp))
                                 }
                             }
                         }
                     }
 
-                    // Volume controller bar
+                    // Volume knob (slider)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
                     ) {
+                        Text(
+                            text = "VOLUME",
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            color = FadedLabel,
+                            letterSpacing = 2.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.VolumeMute, contentDescription = null, tint = Color.Gray)
+                            Icon(Icons.Default.VolumeMute, contentDescription = null, tint = FadedLabel)
                             Slider(
                                 value = scaleVolume,
                                 onValueChange = {
@@ -1184,13 +1275,13 @@ fun FullscreenPlayerDialog(
                                     onVolumeChange(it)
                                 },
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF00ADB5),
-                                    activeTrackColor = Color(0xFF00ADB5),
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.08f)
+                                    thumbColor = BrassGold,
+                                    activeTrackColor = AmberGlow,
+                                    inactiveTrackColor = WalnutLight
                                 ),
                                 modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
                             )
-                            Icon(Icons.Default.VolumeUp, contentDescription = null, tint = Color(0xFF00ADB5))
+                            Icon(Icons.Default.VolumeUp, contentDescription = null, tint = AmberGlow)
                         }
                     }
                 }
@@ -1198,8 +1289,6 @@ fun FullscreenPlayerDialog(
         }
     }
 }
-
-val CirclesShapeStyle = CircleShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1213,7 +1302,7 @@ fun CountrySelectionSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF131D2A),
+        containerColor = Color(0xFF1E1109),
         tonalElevation = 8.dp
     ) {
         Column(
@@ -1222,53 +1311,55 @@ fun CountrySelectionSheet(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Select Country",
+                text = "Select Region",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                fontFamily = FontFamily.Serif,
+                color = AmberGlow,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Sheet Search field
             TextField(
                 value = sheetQuery,
                 onValueChange = { sheetQuery = it },
-                placeholder = { Text("Filter countries...", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+                placeholder = { Text("Filter regions...", color = FadedLabel, fontFamily = FontFamily.Serif) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberGlow.copy(alpha = 0.6f)) },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF1B2838),
-                    unfocusedContainerColor = Color(0xFF1B2838),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedContainerColor = WalnutMedium,
+                    unfocusedContainerColor = WalnutMedium,
+                    focusedTextColor = CreamWhite,
+                    unfocusedTextColor = CreamWhite,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                    .padding(bottom = 12.dp)
             )
 
-            // "Any country" fallback action
             ListItem(
-                headlineContent = { Text("Any Location (Worldwide)", color = Color(0xFF00ADB5), fontWeight = FontWeight.Bold) },
-                leadingContent = { Icon(Icons.Default.Public, contentDescription = null, tint = Color(0xFF00ADB5)) },
+                headlineContent = { Text("All Regions (Worldwide)", color = AmberBright, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif) },
+                leadingContent = { Icon(Icons.Default.Public, contentDescription = null, tint = AmberBright) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onCountrySelected(null) }
                     .padding(vertical = 4.dp)
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+            HorizontalDivider(color = AmberGlow.copy(alpha = 0.1f))
 
             when (countriesState) {
                 is CountriesUiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF00ADB5))
+                        CircularProgressIndicator(color = AmberGlow)
                     }
                 }
                 is CountriesUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Failed to load countries list.", color = Color.Red)
+                        Text(text = "Failed to load regions.", color = RadioRed, fontFamily = FontFamily.Serif)
                     }
                 }
                 is CountriesUiState.Success -> {
@@ -1283,17 +1374,18 @@ fun CountrySelectionSheet(
                     ) {
                         items(filtered, key = { it.name }) { country ->
                             ListItem(
-                                headlineContent = { Text(country.name, color = Color.White) },
-                                trailingContent = { 
+                                headlineContent = { Text(country.name, color = CreamWhite, fontFamily = FontFamily.Serif) },
+                                trailingContent = {
                                     Box(
                                         modifier = Modifier
-                                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(10.dp))
+                                            .background(AmberGlow.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                                            .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
                                             .padding(horizontal = 8.dp, vertical = 2.dp)
                                     ) {
-                                        Text("${country.stationcount} stations", color = Color.LightGray, fontSize = 11.sp)
+                                        Text("${country.stationcount}", color = BrassGold, fontSize = 11.sp, fontFamily = FontFamily.Serif)
                                     }
                                 },
-                                leadingContent = { Icon(Icons.Default.Place, contentDescription = null, tint = Color.Gray) },
+                                leadingContent = { Icon(Icons.Default.Place, contentDescription = null, tint = FadedLabel) },
                                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1319,7 +1411,7 @@ fun LanguageSelectionSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF131D2A),
+        containerColor = Color(0xFF1E1109),
         tonalElevation = 8.dp
     ) {
         Column(
@@ -1331,50 +1423,52 @@ fun LanguageSelectionSheet(
                 text = "Select Language",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                fontFamily = FontFamily.Serif,
+                color = AmberGlow,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Sheet Search field
             TextField(
                 value = sheetQuery,
                 onValueChange = { sheetQuery = it },
-                placeholder = { Text("Filter languages...", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+                placeholder = { Text("Filter languages...", color = FadedLabel, fontFamily = FontFamily.Serif) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberGlow.copy(alpha = 0.6f)) },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF1B2838),
-                    unfocusedContainerColor = Color(0xFF1B2838),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedContainerColor = WalnutMedium,
+                    unfocusedContainerColor = WalnutMedium,
+                    focusedTextColor = CreamWhite,
+                    unfocusedTextColor = CreamWhite,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                    .padding(bottom = 12.dp)
             )
 
-            // "Any Language" standard option
             ListItem(
-                headlineContent = { Text("Any Language", color = Color(0xFF00ADB5), fontWeight = FontWeight.Bold) },
-                leadingContent = { Icon(Icons.Default.Language, contentDescription = null, tint = Color(0xFF00ADB5)) },
+                headlineContent = { Text("Any Language", color = AmberBright, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif) },
+                leadingContent = { Icon(Icons.Default.Language, contentDescription = null, tint = AmberBright) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onLanguageSelected(null) }
                     .padding(vertical = 4.dp)
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+            HorizontalDivider(color = AmberGlow.copy(alpha = 0.1f))
 
             when (languagesState) {
                 is LanguagesUiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF00ADB5))
+                        CircularProgressIndicator(color = AmberGlow)
                     }
                 }
                 is LanguagesUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Failed to load languages list.", color = Color.Red)
+                        Text(text = "Failed to load languages.", color = RadioRed, fontFamily = FontFamily.Serif)
                     }
                 }
                 is LanguagesUiState.Success -> {
@@ -1389,17 +1483,18 @@ fun LanguageSelectionSheet(
                     ) {
                         items(filtered, key = { it.name }) { language ->
                             ListItem(
-                                headlineContent = { Text(language.name.replaceFirstChar { it.uppercase() }, color = Color.White) },
-                                trailingContent = { 
+                                headlineContent = { Text(language.name.replaceFirstChar { it.uppercase() }, color = CreamWhite, fontFamily = FontFamily.Serif) },
+                                trailingContent = {
                                     Box(
                                         modifier = Modifier
-                                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(10.dp))
+                                            .background(AmberGlow.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                                            .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
                                             .padding(horizontal = 8.dp, vertical = 2.dp)
                                     ) {
-                                        Text("${language.stationcount} stations", color = Color.LightGray, fontSize = 11.sp)
+                                        Text("${language.stationcount}", color = BrassGold, fontSize = 11.sp, fontFamily = FontFamily.Serif)
                                     }
                                 },
-                                leadingContent = { Icon(Icons.Default.Translate, contentDescription = null, tint = Color.Gray) },
+                                leadingContent = { Icon(Icons.Default.Translate, contentDescription = null, tint = FadedLabel) },
                                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                                 modifier = Modifier
                                     .fillMaxWidth()
