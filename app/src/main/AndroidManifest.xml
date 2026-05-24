@@ -15,6 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4599369851069924~1019909529"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

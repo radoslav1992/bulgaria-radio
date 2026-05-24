@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,11 +59,16 @@ import com.example.ui.RadioViewModel
 import com.example.ui.RadioViewModelFactory
 import com.example.ui.StationsUiState
 import com.example.ui.theme.*
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        MobileAds.initialize(this)
         setContent {
             MyApplicationTheme {
                 val context = LocalContext.current
@@ -324,7 +330,11 @@ fun DiscoverTabScreen(
                 .testTag("station_search_input")
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        BannerAd(modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         when (searchResults) {
             is StationsUiState.Idle -> {
@@ -386,6 +396,20 @@ fun DiscoverTabScreen(
             }
         }
     }
+}
+
+@Composable
+fun BannerAd(modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            AdView(context).apply {
+                setAdSize(AdSize.BANNER)
+                adUnitId = "ca-app-pub-4599369851069924/4120029820"
+                loadAd(AdRequest.Builder().build())
+            }
+        }
+    )
 }
 
 @Composable
