@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,11 +59,16 @@ import com.example.ui.RadioViewModel
 import com.example.ui.RadioViewModelFactory
 import com.example.ui.StationsUiState
 import com.example.ui.theme.*
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        MobileAds.initialize(this)
         setContent {
             MyApplicationTheme {
                 val context = LocalContext.current
@@ -125,6 +131,17 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                         onToggleFavorite = { viewModel.toggleFavorite(station) },
                         onExpand = { showFullscreenPlayer = true }
                     )
+                }
+
+                // Tricolor accent strip above nav bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaWhite.copy(alpha = 0.7f)))
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaGreen.copy(alpha = 0.7f)))
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaRed.copy(alpha = 0.7f)))
                 }
 
                 NavigationBar(
@@ -235,19 +252,46 @@ fun DiscoverTabScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = "Радио България",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Serif,
-            color = AmberGlow
-        )
-        Text(
-            text = "Слушай български радио станции",
-            fontSize = 13.sp,
-            fontFamily = FontFamily.Serif,
-            color = FadedLabel
-        )
+        // Bulgarian tricolor accent bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+        ) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaWhite))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaGreen))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaRed))
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.LocalFlorist,
+                contentDescription = null,
+                tint = BulgariaRed.copy(alpha = 0.8f),
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Text(
+                    text = "Радио България",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    color = AmberGlow
+                )
+                Text(
+                    text = "Слушай български радио станции",
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Serif,
+                    color = FadedLabel
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         TextField(
@@ -286,7 +330,11 @@ fun DiscoverTabScreen(
                 .testTag("station_search_input")
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        BannerAd(modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         when (searchResults) {
             is StationsUiState.Idle -> {
@@ -348,6 +396,26 @@ fun DiscoverTabScreen(
             }
         }
     }
+}
+
+@Composable
+fun BannerAd(modifier: Modifier = Modifier) {
+    val adUnitId = if (BuildConfig.DEBUG) {
+        "ca-app-pub-3940256099942544/6300978111" // Google test banner
+    } else {
+        "ca-app-pub-4599369851069924/4120029820"
+    }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            AdView(context).apply {
+                setAdSize(AdSize.BANNER)
+                this.adUnitId = adUnitId
+                loadAd(AdRequest.Builder().build())
+            }
+        }
+    )
 }
 
 @Composable
@@ -1109,14 +1177,23 @@ fun FullscreenPlayerDialog(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        Text(
-                            text = "РАДИО БЪЛГАРИЯ",
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = BrassGold,
-                            letterSpacing = 3.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.LocalFlorist,
+                                contentDescription = null,
+                                tint = BulgariaRed.copy(alpha = 0.8f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "РАДИО БЪЛГАРИЯ",
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = BrassGold,
+                                letterSpacing = 3.sp
+                            )
+                        }
                         IconButton(
                             onClick = onToggleFavorite,
                             modifier = Modifier.size(32.dp)
