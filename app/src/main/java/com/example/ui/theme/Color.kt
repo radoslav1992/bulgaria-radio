@@ -34,3 +34,8 @@ val PilotLampOff = Color(0xFF2A3A2E)
 val ChromeLight = Color(0xFFD0D0D0)
 val ChromeDark = Color(0xFF8A8A8A)
 val NeedleRed = Color(0xFFD4342A)
+
+// Bulgarian Flag Colors
+val BulgariaWhite = Color(0xFFF5F5F5)
+val BulgariaGreen = Color(0xFF00966E)
+val BulgariaRed = Color(0xFFD62612)

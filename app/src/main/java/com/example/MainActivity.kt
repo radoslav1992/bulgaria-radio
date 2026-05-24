@@ -127,6 +127,17 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                     )
                 }
 
+                // Tricolor accent strip above nav bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaWhite.copy(alpha = 0.7f)))
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaGreen.copy(alpha = 0.7f)))
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaRed.copy(alpha = 0.7f)))
+                }
+
                 NavigationBar(
                     containerColor = Color(0xFF0D0704),
                     tonalElevation = 0.dp,
@@ -235,19 +246,46 @@ fun DiscoverTabScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = "Радио България",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Serif,
-            color = AmberGlow
-        )
-        Text(
-            text = "Слушай български радио станции",
-            fontSize = 13.sp,
-            fontFamily = FontFamily.Serif,
-            color = FadedLabel
-        )
+        // Bulgarian tricolor accent bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+        ) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaWhite))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaGreen))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(BulgariaRed))
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.LocalFlorist,
+                contentDescription = null,
+                tint = BulgariaRed.copy(alpha = 0.8f),
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Text(
+                    text = "Радио България",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    color = AmberGlow
+                )
+                Text(
+                    text = "Слушай български радио станции",
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Serif,
+                    color = FadedLabel
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         TextField(
@@ -1109,14 +1147,23 @@ fun FullscreenPlayerDialog(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        Text(
-                            text = "РАДИО БЪЛГАРИЯ",
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = BrassGold,
-                            letterSpacing = 3.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.LocalFlorist,
+                                contentDescription = null,
+                                tint = BulgariaRed.copy(alpha = 0.8f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "РАДИО БЪЛГАРИЯ",
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = BrassGold,
+                                letterSpacing = 3.sp
+                            )
+                        }
                         IconButton(
                             onClick = onToggleFavorite,
                             modifier = Modifier.size(32.dp)
