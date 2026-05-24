@@ -34,7 +34,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -1028,67 +1027,48 @@ fun SpeakerGrille(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun VuMeter(level: Float, modifier: Modifier = Modifier) {
-    val needleColor = NeedleRed
-    val arcColor = CreamWhite
-    val tickColor = FadedLabel
+fun SignalWaveDisplay(isPlaying: Boolean, modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .drawBehind {
-                val cx = size.width / 2f
-                val cy = size.height * 0.85f
-                val radius = size.width * 0.4f
-
-                drawArc(
-                    color = arcColor.copy(alpha = 0.15f),
-                    startAngle = 200f,
-                    sweepAngle = 140f,
-                    useCenter = false,
-                    topLeft = Offset(cx - radius, cy - radius),
-                    size = Size(radius * 2, radius * 2),
-                    style = Stroke(width = 2.dp.toPx())
-                )
-
-                for (i in 0..10) {
-                    val angle = 200f + (i * 14f)
-                    val rad = Math.toRadians(angle.toDouble())
-                    val innerR = radius * 0.85f
-                    val outerR = radius * 1.0f
-                    drawLine(
-                        color = if (i > 7) needleColor.copy(alpha = 0.6f) else tickColor.copy(alpha = 0.5f),
-                        start = Offset(
-                            cx + (innerR * Math.cos(rad)).toFloat(),
-                            cy + (innerR * Math.sin(rad)).toFloat()
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            val barCount = 9
+            repeat(barCount) { i ->
+                val pulseAnim = rememberInfiniteTransition()
+                val barHeight by pulseAnim.animateFloat(
+                    initialValue = if (isPlaying) 6f else 3f,
+                    targetValue = if (isPlaying) 44f else 3f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(
+                            durationMillis = if (isPlaying) 400 + (i * 80) else 1000,
+                            easing = LinearEasing
                         ),
-                        end = Offset(
-                            cx + (outerR * Math.cos(rad)).toFloat(),
-                            cy + (outerR * Math.sin(rad)).toFloat()
-                        ),
-                        strokeWidth = if (i % 5 == 0) 2.dp.toPx() else 1.dp.toPx()
+                        repeatMode = RepeatMode.Reverse
                     )
-                }
-
-                val needleAngle = 200f + (level * 140f)
-                val needleRad = Math.toRadians(needleAngle.toDouble())
-                val needleLen = radius * 0.9f
-                drawLine(
-                    color = needleColor,
-                    start = Offset(cx, cy),
-                    end = Offset(
-                        cx + (needleLen * Math.cos(needleRad)).toFloat(),
-                        cy + (needleLen * Math.sin(needleRad)).toFloat()
-                    ),
-                    strokeWidth = 2.dp.toPx(),
-                    cap = StrokeCap.Round
                 )
-
-                drawCircle(
-                    color = needleColor,
-                    radius = 3.dp.toPx(),
-                    center = Offset(cx, cy)
+                val barColor = when {
+                    i < 3 -> DialGreen
+                    i < 6 -> AmberGlow
+                    else -> TubeOrange
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .width(4.dp)
+                        .height(barHeight.dp)
+                        .background(
+                            if (isPlaying) barColor else barColor.copy(alpha = 0.2f),
+                            RoundedCornerShape(2.dp)
+                        )
                 )
             }
-    )
+        }
+    }
 }
 
 @Composable
@@ -1178,15 +1158,6 @@ fun FullscreenPlayerDialog(
             repeatMode = RepeatMode.Reverse
         )
     )
-    val vuLevel by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.75f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -1412,26 +1383,19 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // VU meter
+                    // Signal wave display
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(0.6f)
-                            .height(60.dp)
+                            .height(56.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .background(VinylBlack)
                             .border(1.dp, BrassGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                            .padding(vertical = 4.dp)
                     ) {
-                        VuMeter(
-                            level = if (isPlayingMode) vuLevel else 0.05f,
+                        SignalWaveDisplay(
+                            isPlaying = isPlayingMode,
                             modifier = Modifier.fillMaxSize()
-                        )
-                        Text(
-                            text = "VU",
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = CreamWhite.copy(alpha = 0.4f),
-                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp)
                         )
                     }
 
