@@ -1,0 +1,8 @@
+{
+  "name": "Internet Radio",
+  "description": "A beautiful, modern internet radio app that lets you search and play stations from all over the world by location and language.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
