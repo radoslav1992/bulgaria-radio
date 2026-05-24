@@ -400,12 +400,18 @@ fun DiscoverTabScreen(
 
 @Composable
 fun BannerAd(modifier: Modifier = Modifier) {
+    val adUnitId = if (BuildConfig.DEBUG) {
+        "ca-app-pub-3940256099942544/6300978111" // Google test banner
+    } else {
+        "ca-app-pub-4599369851069924/4120029820"
+    }
+
     AndroidView(
         modifier = modifier,
         factory = { context ->
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
-                adUnitId = "ca-app-pub-4599369851069924/4120029820"
+                this.adUnitId = adUnitId
                 loadAd(AdRequest.Builder().build())
             }
         }
