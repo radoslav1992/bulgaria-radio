@@ -13,24 +13,12 @@ class RadioRepository(
     val favorites: Flow<List<StationEntity>> = stationDao.getFavorites()
     val recentlyPlayed: Flow<List<StationEntity>> = stationDao.getRecentlyPlayed()
 
-    suspend fun getCountries() = radioBrowserApi.getCountries()
-
-    suspend fun getLanguages() = radioBrowserApi.getLanguages()
-
     suspend fun getTopStations(): List<StationEntity> {
         return radioBrowserApi.getTopStations().map { it.toEntity() }
     }
 
-    suspend fun searchStations(
-        name: String? = null,
-        country: String? = null,
-        language: String? = null
-    ): List<StationEntity> {
-        return radioBrowserApi.searchStations(
-            name = name,
-            country = country,
-            language = language
-        ).map { it.toEntity() }
+    suspend fun searchStations(name: String? = null): List<StationEntity> {
+        return radioBrowserApi.searchStations(name = name).map { it.toEntity() }
     }
 
     suspend fun getStationById(uuid: String): StationEntity? {

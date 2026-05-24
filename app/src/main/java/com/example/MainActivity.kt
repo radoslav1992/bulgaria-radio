@@ -49,15 +49,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.data.database.AppDatabase
-import com.example.data.model.NetworkCountry
-import com.example.data.model.NetworkLanguage
 import com.example.data.model.StationEntity
 import com.example.data.network.RetrofitInstance
 import com.example.data.repository.RadioRepository
 import com.example.player.RadioPlaybackState
 import com.example.player.RadioPlayerManager
-import com.example.ui.CountriesUiState
-import com.example.ui.LanguagesUiState
 import com.example.ui.RadioViewModel
 import com.example.ui.RadioViewModelFactory
 import com.example.ui.StationsUiState
@@ -103,11 +99,6 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
     val currentStation by viewModel.currentStation.collectAsStateWithLifecycle()
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
 
-    val selectedCountry by viewModel.selectedCountry.collectAsStateWithLifecycle()
-    val selectedLanguage by viewModel.selectedLanguage.collectAsStateWithLifecycle()
-
-    var showLocationSheet by remember { mutableStateOf(false) }
-    var showLanguageSheet by remember { mutableStateOf(false) }
     var showFullscreenPlayer by remember { mutableStateOf(false) }
 
     val woodGrainBackground = Brush.verticalGradient(
@@ -146,8 +137,8 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                     )
                 ) {
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Radio, contentDescription = "Tune In") },
-                        label = { Text("Tune In", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
+                        icon = { Icon(Icons.Default.Radio, contentDescription = "Слушай") },
+                        label = { Text("Слушай", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
                         selected = currentTab == "discover",
                         onClick = { currentTab = "discover" },
                         colors = NavigationBarItemDefaults.colors(
@@ -159,8 +150,8 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Star, contentDescription = "Presets") },
-                        label = { Text("Presets", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
+                        icon = { Icon(Icons.Default.Star, contentDescription = "Любими") },
+                        label = { Text("Любими", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
                         selected = currentTab == "favorites",
                         onClick = { currentTab = "favorites" },
                         colors = NavigationBarItemDefaults.colors(
@@ -172,8 +163,8 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.History, contentDescription = "History") },
-                        label = { Text("History", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
+                        icon = { Icon(Icons.Default.History, contentDescription = "История") },
+                        label = { Text("История", fontFamily = FontFamily.Serif, fontSize = 11.sp) },
                         selected = currentTab == "recents",
                         onClick = { currentTab = "recents" },
                         colors = NavigationBarItemDefaults.colors(
@@ -198,11 +189,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 "discover" -> DiscoverTabScreen(
                     viewModel = viewModel,
                     searchResults = searchResults,
-                    favorites = favorites,
-                    selectedCountry = selectedCountry,
-                    selectedLanguage = selectedLanguage,
-                    onOpenLocationSheet = { showLocationSheet = true },
-                    onOpenLanguageSheet = { showLanguageSheet = true }
+                    favorites = favorites
                 )
                 "favorites" -> FavoritesTabScreen(
                     favorites = favorites,
@@ -217,28 +204,6 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 )
             }
         }
-    }
-
-    if (showLocationSheet) {
-        CountrySelectionSheet(
-            viewModel = viewModel,
-            onDismiss = { showLocationSheet = false },
-            onCountrySelected = {
-                viewModel.selectCountry(it)
-                showLocationSheet = false
-            }
-        )
-    }
-
-    if (showLanguageSheet) {
-        LanguageSelectionSheet(
-            viewModel = viewModel,
-            onDismiss = { showLanguageSheet = false },
-            onLanguageSelected = {
-                viewModel.selectLanguage(it)
-                showLanguageSheet = false
-            }
-        )
     }
 
     if (showFullscreenPlayer && currentStation != null) {
@@ -259,11 +224,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
 fun DiscoverTabScreen(
     viewModel: RadioViewModel,
     searchResults: StationsUiState,
-    favorites: List<StationEntity>,
-    selectedCountry: NetworkCountry?,
-    selectedLanguage: NetworkLanguage?,
-    onOpenLocationSheet: () -> Unit,
-    onOpenLanguageSheet: () -> Unit
+    favorites: List<StationEntity>
 ) {
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
 
@@ -275,28 +236,27 @@ fun DiscoverTabScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "World Radio",
+            text = "Радио България",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Serif,
             color = AmberGlow
         )
         Text(
-            text = "Tune into stations from across the globe",
+            text = "Слушай български радио станции",
             fontSize = 13.sp,
             fontFamily = FontFamily.Serif,
             color = FadedLabel
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Vintage-styled search field
         TextField(
             value = query,
             onValueChange = {
                 viewModel.updateSearchQuery(it)
                 viewModel.performSearch()
             },
-            placeholder = { Text("Search stations...", color = FadedLabel, fontFamily = FontFamily.Serif) },
+            placeholder = { Text("Търси станции...", color = FadedLabel, fontFamily = FontFamily.Serif) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberGlow.copy(alpha = 0.7f)) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
@@ -304,7 +264,7 @@ fun DiscoverTabScreen(
                         viewModel.updateSearchQuery("")
                         viewModel.performSearch()
                     }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = FadedLabel)
+                        Icon(Icons.Default.Clear, contentDescription = "Изчисти", tint = FadedLabel)
                     }
                 }
             },
@@ -325,96 +285,6 @@ fun DiscoverTabScreen(
                 .border(1.dp, AmberGlow.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                 .testTag("station_search_input")
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Vintage filter chips
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FilterChip(
-                selected = selectedCountry != null,
-                onClick = onOpenLocationSheet,
-                label = {
-                    Text(
-                        text = selectedCountry?.name ?: "Any Region",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontFamily = FontFamily.Serif
-                    )
-                },
-                leadingIcon = { Icon(Icons.Outlined.Place, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = WalnutLight,
-                    labelColor = ParchmentText,
-                    selectedContainerColor = AmberGlow.copy(alpha = 0.15f),
-                    selectedLabelColor = AmberBright,
-                    iconColor = FadedLabel,
-                    selectedLeadingIconColor = AmberBright
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selectedCountry != null,
-                    borderColor = LeatherBrown.copy(alpha = 0.5f),
-                    selectedBorderColor = AmberGlow.copy(alpha = 0.6f),
-                    borderWidth = 1.dp
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-            )
-
-            FilterChip(
-                selected = selectedLanguage != null,
-                onClick = onOpenLanguageSheet,
-                label = {
-                    Text(
-                        text = selectedLanguage?.name?.replaceFirstChar { it.uppercase() } ?: "Any Language",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontFamily = FontFamily.Serif
-                    )
-                },
-                leadingIcon = { Icon(Icons.Outlined.Language, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = WalnutLight,
-                    labelColor = ParchmentText,
-                    selectedContainerColor = AmberGlow.copy(alpha = 0.15f),
-                    selectedLabelColor = AmberBright,
-                    iconColor = FadedLabel,
-                    selectedLeadingIconColor = AmberBright
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selectedLanguage != null,
-                    borderColor = LeatherBrown.copy(alpha = 0.5f),
-                    selectedBorderColor = AmberGlow.copy(alpha = 0.6f),
-                    borderWidth = 1.dp
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-            )
-
-            if (selectedCountry != null || selectedLanguage != null || query.isNotEmpty()) {
-                IconButton(
-                    onClick = {
-                        viewModel.selectCountry(null)
-                        viewModel.selectLanguage(null)
-                        viewModel.updateSearchQuery("")
-                        viewModel.performSearch()
-                    },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(RadioRed.copy(alpha = 0.15f), shape = CircleShape)
-                        .border(1.dp, RadioRed.copy(alpha = 0.3f), CircleShape)
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Reset Filters", tint = RadioRed)
-                }
-            }
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -443,7 +313,7 @@ fun DiscoverTabScreen(
                         onClick = { viewModel.fetchFeatured() },
                         colors = ButtonDefaults.buttonColors(containerColor = MahoganyPanel)
                     ) {
-                        Text("Retry Connection", fontFamily = FontFamily.Serif, color = AmberGlow)
+                        Text("Опитай отново", fontFamily = FontFamily.Serif, color = AmberGlow)
                     }
                 }
             }
@@ -457,7 +327,7 @@ fun DiscoverTabScreen(
                     ) {
                         Icon(Icons.Default.Info, contentDescription = null, tint = FadedLabel, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "No stations found on this frequency.", color = FadedLabel, textAlign = TextAlign.Center, fontFamily = FontFamily.Serif)
+                        Text(text = "Няма намерени станции.", color = FadedLabel, textAlign = TextAlign.Center, fontFamily = FontFamily.Serif)
                     }
                 } else {
                     LazyColumn(
@@ -501,7 +371,6 @@ fun StationRowItem(
                 .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Station icon with vintage dial look
             Box(
                 modifier = Modifier
                     .size(52.dp)
@@ -517,7 +386,7 @@ fun StationRowItem(
                 if (station.favicon.isNotBlank()) {
                     AsyncImage(
                         model = station.favicon,
-                        contentDescription = "Station Logo",
+                        contentDescription = "Лого на станция",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
                     )
@@ -542,10 +411,7 @@ fun StationRowItem(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = listOfNotNull(
-                        station.country.ifEmpty { null },
-                        station.language.ifEmpty { null }
-                    ).joinToString(" • "),
+                    text = station.language.ifEmpty { "България" },
                     color = FadedLabel,
                     fontFamily = FontFamily.Serif,
                     fontSize = 12.sp,
@@ -574,7 +440,7 @@ fun StationRowItem(
             ) {
                 Icon(
                     imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
-                    contentDescription = "Favorite Toggle",
+                    contentDescription = "Любими",
                     tint = if (isFav) AmberBright else FadedLabel
                 )
             }
@@ -595,14 +461,14 @@ fun FavoritesTabScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Preset Stations",
+            text = "Любими станции",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Serif,
             color = AmberGlow
         )
         Text(
-            text = "Your saved radio presets",
+            text = "Запазените ви радио станции",
             fontSize = 13.sp,
             fontFamily = FontFamily.Serif,
             color = FadedLabel
@@ -623,7 +489,7 @@ fun FavoritesTabScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "No presets saved yet.",
+                    text = "Все още няма любими.",
                     color = CreamWhite,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
@@ -631,7 +497,7 @@ fun FavoritesTabScreen(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "Star your favorite stations to save them as presets for quick tuning.",
+                    text = "Маркирайте любимите си станции, за да ги запазите за бърз достъп.",
                     color = FadedLabel,
                     fontFamily = FontFamily.Serif,
                     fontSize = 13.sp,
@@ -688,7 +554,7 @@ fun FavoriteGridCard(
                         .size(32.dp)
                         .background(WalnutDark.copy(alpha = 0.6f), CircleShape)
                 ) {
-                    Icon(Icons.Default.Clear, contentDescription = "Remove Preset", tint = FadedLabel, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Clear, contentDescription = "Премахни", tint = FadedLabel, modifier = Modifier.size(14.dp))
                 }
             }
 
@@ -707,7 +573,7 @@ fun FavoriteGridCard(
                 if (station.favicon.isNotBlank()) {
                     AsyncImage(
                         model = station.favicon,
-                        contentDescription = "Station Logo",
+                        contentDescription = "Лого на станция",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(CircleShape)
                     )
@@ -731,7 +597,7 @@ fun FavoriteGridCard(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = station.country.ifEmpty { "Worldwide" },
+                text = "България",
                 color = FadedLabel,
                 fontFamily = FontFamily.Serif,
                 fontSize = 11.sp,
@@ -758,14 +624,14 @@ fun RecentsTabScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Listening Log",
+            text = "Дневник",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Serif,
             color = AmberGlow
         )
         Text(
-            text = "Stations you've tuned into recently",
+            text = "Последно слушани станции",
             fontSize = 13.sp,
             fontFamily = FontFamily.Serif,
             color = FadedLabel
@@ -786,7 +652,7 @@ fun RecentsTabScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Nothing in the log yet.",
+                    text = "Все още няма записи.",
                     color = CreamWhite,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
@@ -794,7 +660,7 @@ fun RecentsTabScreen(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "Once you tune into a station, it will be recorded here.",
+                    text = "Когато пуснете станция, тя ще бъде записана тук.",
                     color = FadedLabel,
                     fontFamily = FontFamily.Serif,
                     fontSize = 13.sp,
@@ -871,7 +737,6 @@ fun MiniPlayerBar(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Pilot lamp
             Box(
                 modifier = Modifier
                     .size(10.dp)
@@ -889,7 +754,6 @@ fun MiniPlayerBar(
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            // Tuning dial window
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -916,7 +780,7 @@ fun MiniPlayerBar(
                         if (station.favicon.isNotBlank()) {
                             AsyncImage(
                                 model = station.favicon,
-                                contentDescription = "Station Logo",
+                                contentDescription = "Лого на станция",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp))
                             )
@@ -937,10 +801,10 @@ fun MiniPlayerBar(
                         )
                         Text(
                             text = when (playbackState) {
-                                is RadioPlaybackState.Playing -> "ON AIR"
-                                is RadioPlaybackState.Buffering -> "TUNING..."
-                                is RadioPlaybackState.Paused -> "STANDBY"
-                                is RadioPlaybackState.Error -> "NO SIGNAL"
+                                is RadioPlaybackState.Playing -> "В ЕФИР"
+                                is RadioPlaybackState.Buffering -> "НАСТРОЙКА..."
+                                is RadioPlaybackState.Paused -> "ПАУЗА"
+                                is RadioPlaybackState.Error -> "НЯМА СИГНАЛ"
                                 else -> "..."
                             },
                             color = if (isPlayingMode) PilotLampGreen.copy(alpha = 0.8f) else FadedLabel,
@@ -955,7 +819,6 @@ fun MiniPlayerBar(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Preset knob
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -974,7 +837,7 @@ fun MiniPlayerBar(
             ) {
                 Icon(
                     imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
-                    contentDescription = "Preset",
+                    contentDescription = "Любими",
                     tint = if (isFav) VinylBlack else CreamWhite.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp)
                 )
@@ -982,7 +845,6 @@ fun MiniPlayerBar(
 
             Spacer(modifier = Modifier.width(6.dp))
 
-            // Play/pause knob
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -1011,10 +873,10 @@ fun MiniPlayerBar(
                         )
                     }
                     is RadioPlaybackState.Playing -> {
-                        Icon(Icons.Default.Pause, contentDescription = "Pause", tint = AmberGlow, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Pause, contentDescription = "Пауза", tint = AmberGlow, modifier = Modifier.size(18.dp))
                     }
                     else -> {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = AmberGlow, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Пусни", tint = AmberGlow, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -1128,7 +990,6 @@ fun RadioKnob(
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // Knob notch indicator
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1203,7 +1064,6 @@ fun FullscreenPlayerDialog(
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // The radio cabinet
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1233,7 +1093,6 @@ fun FullscreenPlayerDialog(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Top: close button row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1245,13 +1104,13 @@ fun FullscreenPlayerDialog(
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Close",
+                                contentDescription = "Затвори",
                                 tint = FadedLabel,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                         Text(
-                            text = "WORLD RADIO",
+                            text = "РАДИО БЪЛГАРИЯ",
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -1264,7 +1123,7 @@ fun FullscreenPlayerDialog(
                         ) {
                             Icon(
                                 imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
-                                contentDescription = "Preset",
+                                contentDescription = "Любими",
                                 tint = if (isFav) AmberBright else FadedLabel,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -1273,7 +1132,6 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Speaker grille
                     SpeakerGrille(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1282,7 +1140,6 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Station logo
                     Box(
                         modifier = Modifier
                             .size(64.dp)
@@ -1298,7 +1155,7 @@ fun FullscreenPlayerDialog(
                         if (station.favicon.isNotBlank()) {
                             AsyncImage(
                                 model = station.favicon,
-                                contentDescription = "Station Logo",
+                                contentDescription = "Лого на станция",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
                             )
@@ -1309,7 +1166,6 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Tuning dial window
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1326,7 +1182,6 @@ fun FullscreenPlayerDialog(
                             )
                             .border(2.dp, BrassGold.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
                             .drawBehind {
-                                // Frequency tick marks
                                 val tickCount = 20
                                 val startX = 16.dp.toPx()
                                 val endX = size.width - 16.dp.toPx()
@@ -1344,7 +1199,6 @@ fun FullscreenPlayerDialog(
                                     )
                                 }
 
-                                // Red tuning needle
                                 val needleX = size.width * 0.5f
                                 drawLine(
                                     color = NeedleRed,
@@ -1374,10 +1228,7 @@ fun FullscreenPlayerDialog(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = listOfNotNull(
-                                    station.country.ifEmpty { null },
-                                    station.language.ifEmpty { null }
-                                ).joinToString("  •  ").ifEmpty { "Worldwide" },
+                                text = station.language.ifEmpty { "България" },
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 12.sp,
                                 color = CreamWhite.copy(alpha = 0.6f),
@@ -1388,13 +1239,11 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Pilot lamp + status row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Pilot lamp
                         Box(
                             modifier = Modifier
                                 .size(12.dp)
@@ -1416,11 +1265,11 @@ fun FullscreenPlayerDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = when (playbackState) {
-                                is RadioPlaybackState.Playing -> "ON AIR"
-                                is RadioPlaybackState.Buffering -> "TUNING..."
-                                is RadioPlaybackState.Paused -> "STANDBY"
-                                is RadioPlaybackState.Error -> "NO SIGNAL"
-                                else -> "READY"
+                                is RadioPlaybackState.Playing -> "В ЕФИР"
+                                is RadioPlaybackState.Buffering -> "НАСТРОЙКА..."
+                                is RadioPlaybackState.Paused -> "ПАУЗА"
+                                is RadioPlaybackState.Error -> "НЯМА СИГНАЛ"
+                                else -> "ГОТОВО"
                             },
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Bold,
@@ -1432,7 +1281,6 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Signal wave display
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(0.6f)
@@ -1448,7 +1296,6 @@ fun FullscreenPlayerDialog(
                         )
                     }
 
-                    // Tags
                     if (station.tags.isNotBlank()) {
                         Spacer(modifier = Modifier.height(10.dp))
                         val cleanTags = station.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(3)
@@ -1478,13 +1325,11 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Knobs row: Volume — Play/Pause — Tuning
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Volume knob
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             RadioKnob(
                                 modifier = Modifier.size(56.dp),
@@ -1493,7 +1338,7 @@ fun FullscreenPlayerDialog(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                "VOLUME",
+                                "ЗВУК",
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
@@ -1502,7 +1347,6 @@ fun FullscreenPlayerDialog(
                             )
                         }
 
-                        // Play/Pause knob (larger, center)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             RadioKnob(
                                 modifier = Modifier.size(72.dp),
@@ -1518,16 +1362,16 @@ fun FullscreenPlayerDialog(
                                         )
                                     }
                                     is RadioPlaybackState.Playing -> {
-                                        Icon(Icons.Default.Pause, contentDescription = "Pause", tint = AmberGlow, modifier = Modifier.size(28.dp))
+                                        Icon(Icons.Default.Pause, contentDescription = "Пауза", tint = AmberGlow, modifier = Modifier.size(28.dp))
                                     }
                                     else -> {
-                                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = AmberGlow, modifier = Modifier.size(28.dp))
+                                        Icon(Icons.Default.PlayArrow, contentDescription = "Пусни", tint = AmberGlow, modifier = Modifier.size(28.dp))
                                     }
                                 }
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                if (isPlayingMode) "PAUSE" else "PLAY",
+                                if (isPlayingMode) "ПАУЗА" else "ПУСНИ",
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
@@ -1536,7 +1380,6 @@ fun FullscreenPlayerDialog(
                             )
                         }
 
-                        // Tone/preset knob
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             RadioKnob(
                                 modifier = Modifier.size(56.dp),
@@ -1545,14 +1388,14 @@ fun FullscreenPlayerDialog(
                             ) {
                                 Icon(
                                     imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
-                                    contentDescription = "Preset",
+                                    contentDescription = "Любими",
                                     tint = if (isFav) AmberBright else FadedLabel,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                "PRESET",
+                                "ЛЮБИМИ",
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
@@ -1564,7 +1407,6 @@ fun FullscreenPlayerDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Volume slider
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1586,224 +1428,6 @@ fun FullscreenPlayerDialog(
                             modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
                         )
                         Icon(Icons.Default.VolumeUp, contentDescription = null, tint = AmberGlow, modifier = Modifier.size(16.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CountrySelectionSheet(
-    viewModel: RadioViewModel,
-    onDismiss: () -> Unit,
-    onCountrySelected: (NetworkCountry?) -> Unit
-) {
-    val countriesState by viewModel.countriesState.collectAsStateWithLifecycle()
-    var sheetQuery by remember { mutableStateOf("") }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E1109),
-        tonalElevation = 8.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight(0.75f)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Select Region",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Serif,
-                color = AmberGlow,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            TextField(
-                value = sheetQuery,
-                onValueChange = { sheetQuery = it },
-                placeholder = { Text("Filter regions...", color = FadedLabel, fontFamily = FontFamily.Serif) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberGlow.copy(alpha = 0.6f)) },
-                singleLine = true,
-                shape = RoundedCornerShape(10.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = WalnutMedium,
-                    unfocusedContainerColor = WalnutMedium,
-                    focusedTextColor = CreamWhite,
-                    unfocusedTextColor = CreamWhite,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
-                    .padding(bottom = 12.dp)
-            )
-
-            ListItem(
-                headlineContent = { Text("All Regions (Worldwide)", color = AmberBright, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif) },
-                leadingContent = { Icon(Icons.Default.Public, contentDescription = null, tint = AmberBright) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCountrySelected(null) }
-                    .padding(vertical = 4.dp)
-            )
-            HorizontalDivider(color = AmberGlow.copy(alpha = 0.1f))
-
-            when (countriesState) {
-                is CountriesUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = AmberGlow)
-                    }
-                }
-                is CountriesUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Failed to load regions.", color = RadioRed, fontFamily = FontFamily.Serif)
-                    }
-                }
-                is CountriesUiState.Success -> {
-                    val list = (countriesState as CountriesUiState.Success).countries
-                    val filtered = list.filter {
-                        it.name.contains(sheetQuery, ignoreCase = true)
-                    }
-
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(filtered, key = { it.name }) { country ->
-                            ListItem(
-                                headlineContent = { Text(country.name, color = CreamWhite, fontFamily = FontFamily.Serif) },
-                                trailingContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(AmberGlow.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
-                                            .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
-                                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("${country.stationcount}", color = BrassGold, fontSize = 11.sp, fontFamily = FontFamily.Serif)
-                                    }
-                                },
-                                leadingContent = { Icon(Icons.Default.Place, contentDescription = null, tint = FadedLabel) },
-                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onCountrySelected(country) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LanguageSelectionSheet(
-    viewModel: RadioViewModel,
-    onDismiss: () -> Unit,
-    onLanguageSelected: (NetworkLanguage?) -> Unit
-) {
-    val languagesState by viewModel.languagesState.collectAsStateWithLifecycle()
-    var sheetQuery by remember { mutableStateOf("") }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E1109),
-        tonalElevation = 8.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight(0.75f)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Select Language",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Serif,
-                color = AmberGlow,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            TextField(
-                value = sheetQuery,
-                onValueChange = { sheetQuery = it },
-                placeholder = { Text("Filter languages...", color = FadedLabel, fontFamily = FontFamily.Serif) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberGlow.copy(alpha = 0.6f)) },
-                singleLine = true,
-                shape = RoundedCornerShape(10.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = WalnutMedium,
-                    unfocusedContainerColor = WalnutMedium,
-                    focusedTextColor = CreamWhite,
-                    unfocusedTextColor = CreamWhite,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
-                    .padding(bottom = 12.dp)
-            )
-
-            ListItem(
-                headlineContent = { Text("Any Language", color = AmberBright, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif) },
-                leadingContent = { Icon(Icons.Default.Language, contentDescription = null, tint = AmberBright) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onLanguageSelected(null) }
-                    .padding(vertical = 4.dp)
-            )
-            HorizontalDivider(color = AmberGlow.copy(alpha = 0.1f))
-
-            when (languagesState) {
-                is LanguagesUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = AmberGlow)
-                    }
-                }
-                is LanguagesUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Failed to load languages.", color = RadioRed, fontFamily = FontFamily.Serif)
-                    }
-                }
-                is LanguagesUiState.Success -> {
-                    val list = (languagesState as LanguagesUiState.Success).languages
-                    val filtered = list.filter {
-                        it.name.contains(sheetQuery, ignoreCase = true)
-                    }
-
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(filtered, key = { it.name }) { language ->
-                            ListItem(
-                                headlineContent = { Text(language.name.replaceFirstChar { it.uppercase() }, color = CreamWhite, fontFamily = FontFamily.Serif) },
-                                trailingContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(AmberGlow.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
-                                            .border(1.dp, AmberGlow.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
-                                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("${language.stationcount}", color = BrassGold, fontSize = 11.sp, fontFamily = FontFamily.Serif)
-                                    }
-                                },
-                                leadingContent = { Icon(Icons.Default.Translate, contentDescription = null, tint = FadedLabel) },
-                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onLanguageSelected(language) }
-                            )
-                        }
                     }
                 }
             }
