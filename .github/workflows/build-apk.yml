@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build APK
 
 on:
   push:
@@ -35,9 +35,25 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
 
-      - name: Upload APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: radio-bulgaria-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
+
+      - name: Build release AAB
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: ./gradlew :app:bundleRelease
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload release AAB
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: radio-bulgaria-release
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
