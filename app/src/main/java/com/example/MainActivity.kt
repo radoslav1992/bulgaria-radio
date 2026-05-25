@@ -63,12 +63,17 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 
 class MainActivity : ComponentActivity() {
+    private lateinit var consentInformation: ConsentInformation
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        MobileAds.initialize(this)
+        requestConsent()
         setContent {
             MyApplicationTheme {
                 val context = LocalContext.current
@@ -90,6 +95,25 @@ class MainActivity : ComponentActivity() {
                     RadioAppMainScreen(viewModel)
                 }
             }
+        }
+    }
+
+    private fun requestConsent() {
+        val params = ConsentRequestParameters.Builder()
+            .setTagForUnderAgeOfConsent(false)
+            .build()
+
+        consentInformation = UserMessagingPlatform.getConsentInformation(this)
+        consentInformation.requestConsentInfoUpdate(this, params, {
+            UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
+                if (consentInformation.canRequestAds()) {
+                    MobileAds.initialize(this)
+                }
+            }
+        }, {})
+
+        if (consentInformation.canRequestAds()) {
+            MobileAds.initialize(this)
         }
     }
 }
