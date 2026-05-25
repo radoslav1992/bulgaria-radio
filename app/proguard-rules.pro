@@ -15,7 +15,7 @@
 -keepclassmembers class * {
     @com.squareup.moshi.Json <fields>;
 }
--keep class com.example.data.model.** { *; }
+-keep class com.mindtocode.radiobulgaria.data.model.** { *; }
 
 # Room
 -keep class * extends androidx.room.RoomDatabase { *; }
