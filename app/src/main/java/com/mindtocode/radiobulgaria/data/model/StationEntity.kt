@@ -1,4 +1,4 @@
-package com.radiobulgaria.app.data.model
+package com.mindtocode.radiobulgaria.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

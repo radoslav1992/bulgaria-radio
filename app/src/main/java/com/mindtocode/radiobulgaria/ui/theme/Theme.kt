@@ -1,4 +1,4 @@
-package com.radiobulgaria.app.ui.theme
+package com.mindtocode.radiobulgaria.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme

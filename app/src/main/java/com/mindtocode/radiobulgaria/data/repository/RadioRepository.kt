@@ -1,9 +1,9 @@
-package com.radiobulgaria.app.data.repository
+package com.mindtocode.radiobulgaria.data.repository
 
-import com.radiobulgaria.app.data.database.StationDao
-import com.radiobulgaria.app.data.model.NetworkStation
-import com.radiobulgaria.app.data.model.StationEntity
-import com.radiobulgaria.app.data.network.RadioBrowserApi
+import com.mindtocode.radiobulgaria.data.database.StationDao
+import com.mindtocode.radiobulgaria.data.model.NetworkStation
+import com.mindtocode.radiobulgaria.data.model.StationEntity
+import com.mindtocode.radiobulgaria.data.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
 
 class RadioRepository(

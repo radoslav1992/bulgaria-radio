@@ -1,10 +1,10 @@
-package com.radiobulgaria.app.data.database
+package com.mindtocode.radiobulgaria.data.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.radiobulgaria.app.data.model.StationEntity
+import com.mindtocode.radiobulgaria.data.model.StationEntity
 
 @Database(entities = [StationEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {

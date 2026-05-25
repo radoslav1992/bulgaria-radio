@@ -1,8 +1,8 @@
-package com.radiobulgaria.app
+package com.mindtocode.radiobulgaria
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
-import com.radiobulgaria.app.ui.theme.MyApplicationTheme
+import com.mindtocode.radiobulgaria.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule

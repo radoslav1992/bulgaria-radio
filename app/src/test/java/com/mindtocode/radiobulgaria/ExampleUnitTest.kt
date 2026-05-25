@@ -1,4 +1,4 @@
-package com.radiobulgaria.app
+package com.mindtocode.radiobulgaria
 
 import org.junit.Assert.*
 import org.junit.Test

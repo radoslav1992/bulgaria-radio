@@ -1,4 +1,4 @@
-package com.radiobulgaria.app
+package com.mindtocode.radiobulgaria
 
 import android.app.Application
 import android.os.Bundle
@@ -49,16 +49,16 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.radiobulgaria.app.data.database.AppDatabase
-import com.radiobulgaria.app.data.model.StationEntity
-import com.radiobulgaria.app.data.network.RetrofitInstance
-import com.radiobulgaria.app.data.repository.RadioRepository
-import com.radiobulgaria.app.player.RadioPlaybackState
-import com.radiobulgaria.app.player.RadioPlayerManager
-import com.radiobulgaria.app.ui.RadioViewModel
-import com.radiobulgaria.app.ui.RadioViewModelFactory
-import com.radiobulgaria.app.ui.StationsUiState
-import com.radiobulgaria.app.ui.theme.*
+import com.mindtocode.radiobulgaria.data.database.AppDatabase
+import com.mindtocode.radiobulgaria.data.model.StationEntity
+import com.mindtocode.radiobulgaria.data.network.RetrofitInstance
+import com.mindtocode.radiobulgaria.data.repository.RadioRepository
+import com.mindtocode.radiobulgaria.player.RadioPlaybackState
+import com.mindtocode.radiobulgaria.player.RadioPlayerManager
+import com.mindtocode.radiobulgaria.ui.RadioViewModel
+import com.mindtocode.radiobulgaria.ui.RadioViewModelFactory
+import com.mindtocode.radiobulgaria.ui.StationsUiState
+import com.mindtocode.radiobulgaria.ui.theme.*
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView

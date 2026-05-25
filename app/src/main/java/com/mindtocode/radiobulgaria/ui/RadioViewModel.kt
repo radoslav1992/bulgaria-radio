@@ -1,16 +1,16 @@
-package com.radiobulgaria.app.ui
+package com.mindtocode.radiobulgaria.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.radiobulgaria.app.data.database.AppDatabase
-import com.radiobulgaria.app.data.model.StationEntity
-import com.radiobulgaria.app.data.network.RetrofitInstance
-import com.radiobulgaria.app.data.repository.RadioRepository
-import com.radiobulgaria.app.player.RadioPlaybackState
-import com.radiobulgaria.app.player.RadioPlayerManager
+import com.mindtocode.radiobulgaria.data.database.AppDatabase
+import com.mindtocode.radiobulgaria.data.model.StationEntity
+import com.mindtocode.radiobulgaria.data.network.RetrofitInstance
+import com.mindtocode.radiobulgaria.data.repository.RadioRepository
+import com.mindtocode.radiobulgaria.player.RadioPlaybackState
+import com.mindtocode.radiobulgaria.player.RadioPlayerManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

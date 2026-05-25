@@ -1,4 +1,4 @@
-package com.radiobulgaria.app.player
+package com.mindtocode.radiobulgaria.player
 
 import android.content.Context
 import android.net.Uri
@@ -11,7 +11,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import com.radiobulgaria.app.data.model.StationEntity
+import com.mindtocode.radiobulgaria.data.model.StationEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

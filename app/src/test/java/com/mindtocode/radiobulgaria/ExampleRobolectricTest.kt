@@ -1,4 +1,4 @@
-package com.radiobulgaria.app
+package com.mindtocode.radiobulgaria
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider

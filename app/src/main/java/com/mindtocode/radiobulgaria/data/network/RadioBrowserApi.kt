@@ -1,6 +1,6 @@
-package com.radiobulgaria.app.data.network
+package com.mindtocode.radiobulgaria.data.network
 
-import com.radiobulgaria.app.data.model.NetworkStation
+import com.mindtocode.radiobulgaria.data.model.NetworkStation
 import retrofit2.http.GET
 import retrofit2.http.Query
 

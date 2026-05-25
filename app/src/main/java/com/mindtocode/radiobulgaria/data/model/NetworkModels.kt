@@ -1,4 +1,4 @@
-package com.radiobulgaria.app.data.model
+package com.mindtocode.radiobulgaria.data.model
 
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Json
