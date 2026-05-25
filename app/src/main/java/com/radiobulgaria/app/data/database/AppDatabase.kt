@@ -1,10 +1,10 @@
-package com.example.data.database
+package com.radiobulgaria.app.data.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.data.model.StationEntity
+import com.radiobulgaria.app.data.model.StationEntity
 
 @Database(entities = [StationEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {

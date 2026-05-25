@@ -1,6 +1,6 @@
-package com.example.data.network
+package com.radiobulgaria.app.data.network
 
-import com.example.data.model.NetworkStation
+import com.radiobulgaria.app.data.model.NetworkStation
 import retrofit2.http.GET
 import retrofit2.http.Query
 

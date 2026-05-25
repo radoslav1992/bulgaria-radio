@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
+  namespace = "com.radiobulgaria.app"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {

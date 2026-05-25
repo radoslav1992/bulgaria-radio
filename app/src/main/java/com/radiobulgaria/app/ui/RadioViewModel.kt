@@ -1,16 +1,16 @@
-package com.example.ui
+package com.radiobulgaria.app.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.data.database.AppDatabase
-import com.example.data.model.StationEntity
-import com.example.data.network.RetrofitInstance
-import com.example.data.repository.RadioRepository
-import com.example.player.RadioPlaybackState
-import com.example.player.RadioPlayerManager
+import com.radiobulgaria.app.data.database.AppDatabase
+import com.radiobulgaria.app.data.model.StationEntity
+import com.radiobulgaria.app.data.network.RetrofitInstance
+import com.radiobulgaria.app.data.repository.RadioRepository
+import com.radiobulgaria.app.player.RadioPlaybackState
+import com.radiobulgaria.app.player.RadioPlayerManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.example.data.model
+package com.radiobulgaria.app.data.model
 
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Json

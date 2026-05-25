@@ -1,9 +1,9 @@
-package com.example.data.repository
+package com.radiobulgaria.app.data.repository
 
-import com.example.data.database.StationDao
-import com.example.data.model.NetworkStation
-import com.example.data.model.StationEntity
-import com.example.data.network.RadioBrowserApi
+import com.radiobulgaria.app.data.database.StationDao
+import com.radiobulgaria.app.data.model.NetworkStation
+import com.radiobulgaria.app.data.model.StationEntity
+import com.radiobulgaria.app.data.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
 
 class RadioRepository(
