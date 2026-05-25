@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Радио България - Слушай български радио станции</title>
+    <meta name="description" content="Радио България - безплатно приложение за слушане на български радио станции. Всички български радиа на едно място.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: linear-gradient(180deg, #1A0F07 0%, #231509 30%, #1A0F07 60%, #150B05 100%);
+            color: #F5E6D3;
+            min-height: 100vh;
+        }
+        .tricolor {
+            height: 4px;
+            display: flex;
+            width: 100%;
+        }
+        .tricolor span { flex: 1; }
+        .tricolor .white { background: #F5F5F5; }
+        .tricolor .green { background: #00966E; }
+        .tricolor .red { background: #D62612; }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .logo {
+            width: 200px;
+            height: 200px;
+            border-radius: 24px;
+            border: 3px solid #C9A84C;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(212,165,116,0.15);
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #D4A574;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .tagline {
+            font-size: 1.1em;
+            color: #9C8B7A;
+            margin-bottom: 32px;
+        }
+        .play-badge {
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .play-badge img {
+            height: 60px;
+        }
+        .play-badge a {
+            display: inline-block;
+            background: #C9A84C;
+            color: #1A0F07;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+        }
+        .play-badge a:hover {
+            background: #E8B86D;
+        }
+
+        .features {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .features h2 {
+            text-align: center;
+            color: #D4A574;
+            font-size: 1.5em;
+            margin-bottom: 24px;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 600px) {
+            .feature-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8em; }
+        }
+        .feature-card {
+            background: rgba(44, 24, 16, 0.7);
+            border: 1px solid rgba(212, 165, 116, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .feature-card h3 {
+            color: #E8B86D;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            color: #9C8B7A;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .about {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .about p {
+            color: #9C8B7A;
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid rgba(212, 165, 116, 0.15);
+            max-width: 700px;
+            margin: 40px auto 0;
+        }
+        footer a {
+            color: #C9A84C;
+            text-decoration: none;
+            margin: 0 12px;
+            font-size: 0.85em;
+        }
+        footer a:hover { text-decoration: underline; }
+        footer .copy {
+            color: #9C8B7A;
+            font-size: 0.8em;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="tricolor">
+        <span class="white"></span>
+        <span class="green"></span>
+        <span class="red"></span>
+    </div>
+
+    <div class="hero">
+        <img src="app-icon-512.png" alt="Радио България" class="logo">
+        <h1>Радио България</h1>
+        <p class="tagline">Всички български радио станции на едно място</p>
+
+        <div class="play-badge">
+            <a href="#">Изтегли от Google Play</a>
+        </div>
+    </div>
+
+    <div class="features">
+        <h2>Възможности</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>Български станции</h3>
+                <p>Достъп до всички български радио станции чрез Radio Browser — напълно безплатно.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Любими станции</h3>
+                <p>Запазете любимите си станции за бърз достъп с едно докосване.</p>
+            </div>
+            <div class="feature-card">
+                <h3>История</h3>
+                <p>Дневник на последно слушаните станции — лесно се връщайте към тях.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Винтидж дизайн</h3>
+                <p>Красив интерфейс, вдъхновен от класическите български радиоприемници.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="about">
+        <p>Радио България използва публичния API на <a href="https://www.radio-browser.info" style="color:#C9A84C;">Radio Browser</a> за достъп до радио станции. Съдържанието на станциите се излъчва от съответните радио оператори.</p>
+    </div>
+
+    <footer>
+        <div>
+            <a href="privacy-policy.html">Поверителност</a>
+            <a href="terms.html">Условия</a>
+            <a href="mailto:radoslav.dodnikov@gmail.com">Контакт</a>
+        </div>
+        <p class="copy">&copy; 2026 Mind2Code. Всички права запазени.</p>
+    </footer>
+
+    <div class="tricolor" style="margin-top: 0;">
+        <span class="white"></span>
+        <span class="green"></span>
+        <span class="red"></span>
+    </div>
+</body>
+</html>
