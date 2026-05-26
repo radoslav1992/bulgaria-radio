@@ -44,7 +44,9 @@ jobs:
 
       - name: Decode release keystore
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 -d > my-upload-key.jks
+        run: printf '%s' "$RELEASE_KEYSTORE" | base64 -d > my-upload-key.jks
+        env:
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
 
       - name: Build release AAB
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
