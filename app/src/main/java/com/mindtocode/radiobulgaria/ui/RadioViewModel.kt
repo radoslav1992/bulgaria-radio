@@ -9,6 +9,7 @@ import com.mindtocode.radiobulgaria.data.database.AppDatabase
 import com.mindtocode.radiobulgaria.data.model.StationEntity
 import com.mindtocode.radiobulgaria.data.network.RetrofitInstance
 import com.mindtocode.radiobulgaria.data.repository.RadioRepository
+import com.mindtocode.radiobulgaria.data.repository.VoteResult
 import com.mindtocode.radiobulgaria.player.RadioPlaybackState
 import com.mindtocode.radiobulgaria.player.RadioPlayerManager
 import kotlinx.coroutines.flow.*
@@ -41,6 +42,12 @@ class RadioViewModel(
 
     val recentlyPlayed: StateFlow<List<StationEntity>> = repository.recentlyPlayed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val votedStationIds: StateFlow<Set<String>> = repository.votedStationIds
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    private val _voteMessage = MutableStateFlow<String?>(null)
+    val voteMessage = _voteMessage.asStateFlow()
 
     init {
         fetchFeatured()
@@ -93,6 +100,38 @@ class RadioViewModel(
 
     fun setVolume(volume: Float) {
         playerManager.setVolume(volume)
+    }
+
+    fun vote(station: StationEntity) {
+        viewModelScope.launch {
+            if (votedStationIds.value.contains(station.stationuuid)) return@launch
+            when (val result = repository.voteForStation(station)) {
+                is VoteResult.Success -> {
+                    // Optimistically reflect the new tally in the visible list.
+                    val current = _stationsState.value
+                    if (current is StationsUiState.Success) {
+                        _stationsState.value = StationsUiState.Success(
+                            current.stations.map {
+                                if (it.stationuuid == station.stationuuid)
+                                    it.copy(votes = it.votes + 1)
+                                else it
+                            }
+                        )
+                    }
+                    _voteMessage.value = "Благодарим за гласа!"
+                }
+                is VoteResult.AlreadyVoted -> {
+                    _voteMessage.value = "Вече сте гласували за тази станция."
+                }
+                is VoteResult.Error -> {
+                    _voteMessage.value = result.message
+                }
+            }
+        }
+    }
+
+    fun clearVoteMessage() {
+        _voteMessage.value = null
     }
 
     fun toggleFavorite(station: StationEntity) {

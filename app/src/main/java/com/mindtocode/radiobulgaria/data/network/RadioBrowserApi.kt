@@ -1,7 +1,9 @@
 package com.mindtocode.radiobulgaria.data.network
 
 import com.mindtocode.radiobulgaria.data.model.NetworkStation
+import com.mindtocode.radiobulgaria.data.model.VoteResponse
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface RadioBrowserApi {
@@ -24,4 +26,9 @@ interface RadioBrowserApi {
         @Query("reverse") reverse: Boolean = true,
         @Query("hidebroken") hidebroken: Boolean = true
     ): List<NetworkStation>
+
+    @GET("json/vote/{stationuuid}")
+    suspend fun voteForStation(
+        @Path("stationuuid") stationuuid: String
+    ): VoteResponse
 }

@@ -17,6 +17,12 @@ data class NetworkLanguage(
 )
 
 @JsonClass(generateAdapter = true)
+data class VoteResponse(
+    @Json(name = "ok") val ok: Boolean,
+    @Json(name = "message") val message: String?
+)
+
+@JsonClass(generateAdapter = true)
 data class NetworkStation(
     @Json(name = "stationuuid") val stationuuid: String,
     @Json(name = "name") val name: String,

@@ -2,6 +2,7 @@ package com.mindtocode.radiobulgaria.data.database
 
 import androidx.room.*
 import com.mindtocode.radiobulgaria.data.model.StationEntity
+import com.mindtocode.radiobulgaria.data.model.VotedStationEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -23,4 +24,18 @@ interface StationDao {
 
     @Query("UPDATE stations SET lastPlayedTime = :timestamp WHERE stationuuid = :uuid")
     suspend fun updateLastPlayedTime(uuid: String, timestamp: Long)
+
+    @Query("UPDATE stations SET votes = votes + 1 WHERE stationuuid = :uuid")
+    suspend fun incrementVotes(uuid: String)
+
+    // --- Voting ---
+
+    @Query("SELECT stationuuid FROM voted_stations")
+    fun getVotedStationIds(): Flow<List<String>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM voted_stations WHERE stationuuid = :uuid)")
+    suspend fun hasVoted(uuid: String): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertVote(vote: VotedStationEntity)
 }

@@ -128,6 +128,16 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
     val recentlyPlayed by viewModel.recentlyPlayed.collectAsStateWithLifecycle()
     val currentStation by viewModel.currentStation.collectAsStateWithLifecycle()
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
+    val votedStationIds by viewModel.votedStationIds.collectAsStateWithLifecycle()
+    val voteMessage by viewModel.voteMessage.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    LaunchedEffect(voteMessage) {
+        voteMessage?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.clearVoteMessage()
+        }
+    }
 
     var showFullscreenPlayer by remember { mutableStateOf(false) }
 
@@ -234,14 +244,18 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 )
                 "favorites" -> FavoritesTabScreen(
                     favorites = favorites,
+                    votedStationIds = votedStationIds,
                     onPlay = { viewModel.playStation(it) },
-                    onToggleFavorite = { viewModel.toggleFavorite(it) }
+                    onToggleFavorite = { viewModel.toggleFavorite(it) },
+                    onVote = { viewModel.vote(it) }
                 )
                 "recents" -> RecentsTabScreen(
                     recentlyPlayed = recentlyPlayed,
                     favorites = favorites,
+                    votedStationIds = votedStationIds,
                     onPlay = { viewModel.playStation(it) },
-                    onToggleFavorite = { viewModel.toggleFavorite(it) }
+                    onToggleFavorite = { viewModel.toggleFavorite(it) },
+                    onVote = { viewModel.vote(it) }
                 )
             }
         }
@@ -253,9 +267,11 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
             station = activeStation,
             playbackState = playbackState,
             favorites = favorites,
+            hasVoted = votedStationIds.contains(activeStation.stationuuid),
             onDismiss = { showFullscreenPlayer = false },
             onTogglePlayPause = { viewModel.togglePlayPause() },
             onToggleFavorite = { viewModel.toggleFavorite(activeStation) },
+            onVote = { viewModel.vote(activeStation) },
             onVolumeChange = { viewModel.setVolume(it) }
         )
     }
@@ -268,6 +284,7 @@ fun DiscoverTabScreen(
     favorites: List<StationEntity>
 ) {
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val votedIds by viewModel.votedStationIds.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -411,8 +428,10 @@ fun DiscoverTabScreen(
                             StationRowItem(
                                 station = station,
                                 isFav = isFav,
+                                hasVoted = votedIds.contains(station.stationuuid),
                                 onPlay = { viewModel.playStation(station) },
-                                onToggleFavorite = { viewModel.toggleFavorite(station) }
+                                onToggleFavorite = { viewModel.toggleFavorite(station) },
+                                onVote = { viewModel.vote(station) }
                             )
                         }
                     }
@@ -446,8 +465,10 @@ fun BannerAd(modifier: Modifier = Modifier) {
 fun StationRowItem(
     station: StationEntity,
     isFav: Boolean,
+    hasVoted: Boolean,
     onPlay: () -> Unit,
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
+    onVote: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(10.dp),
@@ -526,6 +547,14 @@ fun StationRowItem(
                 }
             }
 
+            VoteControl(
+                votes = station.votes,
+                hasVoted = hasVoted,
+                onVote = onVote
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
             IconButton(
                 onClick = onToggleFavorite,
                 modifier = Modifier.size(48.dp)
@@ -540,11 +569,53 @@ fun StationRowItem(
     }
 }
 
+/**
+ * Compact thumbs-up control showing a station's vote tally. Tapping casts a
+ * single vote; once the user has voted it becomes highlighted and inert.
+ */
+@Composable
+fun VoteControl(
+    votes: Int,
+    hasVoted: Boolean,
+    onVote: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(enabled = !hasVoted) { onVote() }
+            .padding(horizontal = 6.dp, vertical = 4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.ThumbUp,
+            contentDescription = if (hasVoted) "Гласувано" else "Гласувай",
+            tint = if (hasVoted) AmberBright else FadedLabel,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = formatVotes(votes),
+            color = if (hasVoted) AmberGlow else FadedLabel,
+            fontFamily = FontFamily.Serif,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+private fun formatVotes(votes: Int): String = when {
+    votes >= 1_000_000 -> "%.1fM".format(votes / 1_000_000.0)
+    votes >= 1_000 -> "%.1fk".format(votes / 1_000.0)
+    else -> votes.toString()
+}
+
 @Composable
 fun FavoritesTabScreen(
     favorites: List<StationEntity>,
+    votedStationIds: Set<String>,
     onPlay: (StationEntity) -> Unit,
-    onToggleFavorite: (StationEntity) -> Unit
+    onToggleFavorite: (StationEntity) -> Unit,
+    onVote: (StationEntity) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -607,8 +678,10 @@ fun FavoritesTabScreen(
                 items(favorites, key = { it.stationuuid }) { station ->
                     FavoriteGridCard(
                         station = station,
+                        hasVoted = votedStationIds.contains(station.stationuuid),
                         onPlay = { onPlay(station) },
-                        onRemove = { onToggleFavorite(station) }
+                        onRemove = { onToggleFavorite(station) },
+                        onVote = { onVote(station) }
                     )
                 }
             }
@@ -619,8 +692,10 @@ fun FavoritesTabScreen(
 @Composable
 fun FavoriteGridCard(
     station: StationEntity,
+    hasVoted: Boolean,
     onPlay: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onVote: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -698,6 +773,33 @@ fun FavoriteGridCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(100.dp))
+                    .background(BrassGold.copy(alpha = 0.08f))
+                    .border(1.dp, BrassGold.copy(alpha = 0.25f), RoundedCornerShape(100.dp))
+                    .clickable(enabled = !hasVoted) { onVote() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ThumbUp,
+                    contentDescription = if (hasVoted) "Гласувано" else "Гласувай",
+                    tint = if (hasVoted) AmberBright else BrassGold,
+                    modifier = Modifier.size(13.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = formatVotes(station.votes),
+                    color = if (hasVoted) AmberGlow else BrassGold,
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
@@ -706,8 +808,10 @@ fun FavoriteGridCard(
 fun RecentsTabScreen(
     recentlyPlayed: List<StationEntity>,
     favorites: List<StationEntity>,
+    votedStationIds: Set<String>,
     onPlay: (StationEntity) -> Unit,
-    onToggleFavorite: (StationEntity) -> Unit
+    onToggleFavorite: (StationEntity) -> Unit,
+    onVote: (StationEntity) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -770,8 +874,10 @@ fun RecentsTabScreen(
                     StationRowItem(
                         station = station,
                         isFav = isFav,
+                        hasVoted = votedStationIds.contains(station.stationuuid),
                         onPlay = { onPlay(station) },
-                        onToggleFavorite = { onToggleFavorite(station) }
+                        onToggleFavorite = { onToggleFavorite(station) },
+                        onVote = { onVote(station) }
                     )
                 }
             }
@@ -1115,9 +1221,11 @@ fun FullscreenPlayerDialog(
     station: StationEntity,
     playbackState: RadioPlaybackState,
     favorites: List<StationEntity>,
+    hasVoted: Boolean,
     onDismiss: () -> Unit,
     onTogglePlayPause: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onVote: () -> Unit,
     onVolumeChange: (Float) -> Unit
 ) {
     val isFav = favorites.any { it.stationuuid == station.stationuuid }
@@ -1377,6 +1485,34 @@ fun FullscreenPlayerDialog(
                             fontSize = 11.sp,
                             color = if (isPlayingMode) PilotLampGreen else FadedLabel,
                             letterSpacing = 2.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(BrassGold.copy(alpha = 0.08f))
+                            .border(1.dp, BrassGold.copy(alpha = 0.3f), RoundedCornerShape(100.dp))
+                            .clickable(enabled = !hasVoted) { onVote() }
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ThumbUp,
+                            contentDescription = if (hasVoted) "Гласувано" else "Гласувай",
+                            tint = if (hasVoted) AmberBright else BrassGold,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${formatVotes(station.votes)} гласа",
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (hasVoted) AmberGlow else BrassGold,
+                            letterSpacing = 1.sp
                         )
                     }
 

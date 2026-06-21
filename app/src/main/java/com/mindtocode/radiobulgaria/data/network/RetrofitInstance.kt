@@ -19,7 +19,15 @@ object RetrofitInstance {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
+    private val userAgentInterceptor = okhttp3.Interceptor { chain ->
+        val request = chain.request().newBuilder()
+            .header("User-Agent", "RadioBulgaria/1.0")
+            .build()
+        chain.proceed(request)
+    }
+
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
