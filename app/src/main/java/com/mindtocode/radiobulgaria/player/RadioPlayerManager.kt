@@ -1,16 +1,16 @@
 package com.mindtocode.radiobulgaria.player
 
+import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
-import androidx.annotation.OptIn
-import androidx.media3.common.AudioAttributes
+import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.ListenableFuture
 import com.mindtocode.radiobulgaria.data.model.StationEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,11 +24,20 @@ sealed class RadioPlaybackState {
     data class Error(val message: String) : RadioPlaybackState()
 }
 
-@OptIn(UnstableApi::class)
-class RadioPlayerManager(private val context: Context) {
+/**
+ * UI-facing playback controller. It connects to [RadioPlaybackService] through
+ * a Media3 [MediaController] so playback survives in the background, while
+ * exposing the same StateFlows the rest of the app already relies on.
+ */
+class RadioPlayerManager(context: Context) {
 
-    private var exoPlayer: ExoPlayer? = null
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val appContext = context.applicationContext
+
+    private var controller: MediaController? = null
+    private var controllerFuture: ListenableFuture<MediaController>? = null
+
+    /** Station queued before the controller finished connecting. */
+    private var pendingStation: StationEntity? = null
 
     private val _playbackState = MutableStateFlow<RadioPlaybackState>(RadioPlaybackState.Idle)
     val playbackState: StateFlow<RadioPlaybackState> = _playbackState.asStateFlow()
@@ -36,109 +45,121 @@ class RadioPlayerManager(private val context: Context) {
     private val _currentStation = MutableStateFlow<StationEntity?>(null)
     val currentStation: StateFlow<StationEntity?> = _currentStation.asStateFlow()
 
-    init {
-        mainHandler.post {
-            initializePlayer()
+    /** Current song / show title parsed from the stream's ICY metadata, if any. */
+    private val _currentTrackTitle = MutableStateFlow<String?>(null)
+    val currentTrackTitle: StateFlow<String?> = _currentTrackTitle.asStateFlow()
+
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) = updatePlaybackState()
+        override fun onPlaybackStateChanged(playbackState: Int) = updatePlaybackState()
+
+        override fun onPlayerError(error: PlaybackException) {
+            _playbackState.value = RadioPlaybackState.Error(
+                error.localizedMessage ?: "Network playback error"
+            )
+        }
+
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            val title = mediaMetadata.title?.toString()?.trim()
+            val stationName = _currentStation.value?.name
+            // ExoPlayer folds ICY stream titles into mediaMetadata.title; only
+            // treat it as "now playing" when it differs from the station name.
+            _currentTrackTitle.value =
+                if (!title.isNullOrBlank() && title != stationName) title else null
         }
     }
 
-    private fun initializePlayer() {
-        if (exoPlayer != null) return
-        
-        exoPlayer = ExoPlayer.Builder(context)
-            .setAudioAttributes(AudioAttributes.DEFAULT, true)
-            .build()
-            .apply {
-                addListener(object : Player.Listener {
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        updatePlaybackState()
-                    }
-
-                    override fun onPlaybackStateChanged(state: Int) {
-                        updatePlaybackState()
-                    }
-
-                    override fun onPlayerError(error: PlaybackException) {
-                        _playbackState.value = RadioPlaybackState.Error(
-                            error.localizedMessage ?: "Network playback error"
-                        )
-                    }
-                })
-            }
+    init {
+        val sessionToken = SessionToken(
+            appContext,
+            ComponentName(appContext, RadioPlaybackService::class.java)
+        )
+        val future = MediaController.Builder(appContext, sessionToken).buildAsync()
+        controllerFuture = future
+        future.addListener(
+            {
+                controller = future.get().apply { addListener(playerListener) }
+                updatePlaybackState()
+                pendingStation?.let { station ->
+                    pendingStation = null
+                    play(station)
+                }
+            },
+            ContextCompat.getMainExecutor(appContext)
+        )
     }
 
     private fun updatePlaybackState() {
-        val player = exoPlayer ?: return
-        val isPlayerPlaying = player.isPlaying
-        val state = player.playbackState
-
-        _playbackState.value = when (state) {
+        val c = controller ?: return
+        _playbackState.value = when (c.playbackState) {
             Player.STATE_BUFFERING -> RadioPlaybackState.Buffering
-            Player.STATE_READY -> {
-                if (isPlayerPlaying) RadioPlaybackState.Playing else RadioPlaybackState.Paused
-            }
-            Player.STATE_IDLE -> RadioPlaybackState.Idle
-            Player.STATE_ENDED -> RadioPlaybackState.Idle
+            Player.STATE_READY -> if (c.isPlaying) RadioPlaybackState.Playing else RadioPlaybackState.Paused
             else -> RadioPlaybackState.Idle
         }
     }
 
     fun play(station: StationEntity) {
         _currentStation.value = station
-        mainHandler.post {
-            val player = exoPlayer ?: return@post
-            try {
-                _playbackState.value = RadioPlaybackState.Buffering
-                val mediaItem = MediaItem.fromUri(Uri.parse(station.urlResolved))
-                player.setMediaItem(mediaItem)
-                player.prepare()
-                player.play()
-            } catch (e: Exception) {
-                _playbackState.value = RadioPlaybackState.Error(
-                    e.localizedMessage ?: "Failed to start streaming"
-                )
-            }
+        _currentTrackTitle.value = null
+
+        val c = controller
+        if (c == null) {
+            pendingStation = station
+            _playbackState.value = RadioPlaybackState.Buffering
+            return
         }
+
+        val metadataBuilder = MediaMetadata.Builder()
+            .setTitle(station.name)
+            .setStation(station.name)
+            .setArtist(station.language.ifEmpty { "България" })
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+        if (station.favicon.isNotBlank()) {
+            metadataBuilder.setArtworkUri(Uri.parse(station.favicon))
+        }
+
+        val mediaItem = MediaItem.Builder()
+            .setUri(station.urlResolved)
+            .setMediaId(station.stationuuid)
+            .setMediaMetadata(metadataBuilder.build())
+            .build()
+
+        c.setMediaItem(mediaItem)
+        c.prepare()
+        c.playWhenReady = true
     }
 
     fun togglePlayPause() {
-        mainHandler.post {
-            val player = exoPlayer ?: return@post
-            if (player.isPlaying) {
-                player.pause()
+        val c = controller ?: return
+        if (c.isPlaying) {
+            c.pause()
+        } else {
+            if (c.playbackState == Player.STATE_IDLE && _currentStation.value != null) {
+                _currentStation.value?.let { play(it) }
             } else {
-                if (player.playbackState == Player.STATE_IDLE && _currentStation.value != null) {
-                    _currentStation.value?.let { play(it) }
-                } else {
-                    player.play()
-                }
+                c.play()
             }
         }
     }
 
     fun pause() {
-        mainHandler.post {
-            exoPlayer?.pause()
-        }
+        controller?.pause()
     }
 
     fun stop() {
-        mainHandler.post {
-            exoPlayer?.stop()
-            _playbackState.value = RadioPlaybackState.Idle
-        }
+        controller?.stop()
+        _playbackState.value = RadioPlaybackState.Idle
     }
 
     fun setVolume(volume: Float) {
-        mainHandler.post {
-            exoPlayer?.volume = volume.coerceIn(0f, 1f)
-        }
+        controller?.volume = volume.coerceIn(0f, 1f)
     }
 
     fun release() {
-        mainHandler.post {
-            exoPlayer?.release()
-            exoPlayer = null
-        }
+        controller?.removeListener(playerListener)
+        controllerFuture?.let { MediaController.releaseFuture(it) }
+        controllerFuture = null
+        controller = null
     }
 }

@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.mindtocode.radiobulgaria.data.model.StationEntity
 
-@Database(entities = [StationEntity::class], version = 1, exportSchema = false)
+@Database(entities = [StationEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun stationDao(): StationDao
 

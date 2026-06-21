@@ -23,4 +23,7 @@ interface StationDao {
 
     @Query("UPDATE stations SET lastPlayedTime = :timestamp WHERE stationuuid = :uuid")
     suspend fun updateLastPlayedTime(uuid: String, timestamp: Long)
+
+    @Query("UPDATE stations SET votes = votes + 1 WHERE stationuuid = :uuid")
+    suspend fun incrementVotes(uuid: String)
 }

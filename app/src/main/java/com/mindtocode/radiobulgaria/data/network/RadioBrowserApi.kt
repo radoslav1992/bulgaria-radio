@@ -1,7 +1,9 @@
 package com.mindtocode.radiobulgaria.data.network
 
 import com.mindtocode.radiobulgaria.data.model.NetworkStation
+import com.mindtocode.radiobulgaria.data.model.VoteResponse
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface RadioBrowserApi {
@@ -24,4 +26,19 @@ interface RadioBrowserApi {
         @Query("reverse") reverse: Boolean = true,
         @Query("hidebroken") hidebroken: Boolean = true
     ): List<NetworkStation>
+
+    @GET("json/vote/{stationuuid}")
+    suspend fun voteForStation(
+        @Path("stationuuid") stationuuid: String
+    ): VoteResponse
+
+    /**
+     * Registers a "click" (a play) for the station. Radio Browser uses this to
+     * compute the click-count rankings the app displays, so it should be called
+     * whenever a user starts listening to a station.
+     */
+    @GET("json/url/{stationuuid}")
+    suspend fun registerClick(
+        @Path("stationuuid") stationuuid: String
+    ): VoteResponse
 }

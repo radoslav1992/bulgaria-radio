@@ -1,16 +1,24 @@
 package com.mindtocode.radiobulgaria
 
+import android.Manifest
 import android.app.Application
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -57,6 +65,7 @@ import com.mindtocode.radiobulgaria.player.RadioPlaybackState
 import com.mindtocode.radiobulgaria.player.RadioPlayerManager
 import com.mindtocode.radiobulgaria.ui.RadioViewModel
 import com.mindtocode.radiobulgaria.ui.RadioViewModelFactory
+import com.mindtocode.radiobulgaria.ui.SortOrder
 import com.mindtocode.radiobulgaria.ui.StationsUiState
 import com.mindtocode.radiobulgaria.ui.theme.*
 import com.google.android.gms.ads.AdRequest
@@ -70,10 +79,16 @@ import com.google.android.ump.UserMessagingPlatform
 class MainActivity : ComponentActivity() {
     private lateinit var consentInformation: ConsentInformation
 
+    // Permission to show the media-playback notification (Android 13+).
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* Playback works regardless; the notification just won't show if denied. */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         requestConsent()
+        maybeRequestNotificationPermission()
         setContent {
             MyApplicationTheme {
                 val context = LocalContext.current
@@ -95,6 +110,14 @@ class MainActivity : ComponentActivity() {
                     RadioAppMainScreen(viewModel)
                 }
             }
+        }
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -128,16 +151,27 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
     val recentlyPlayed by viewModel.recentlyPlayed.collectAsStateWithLifecycle()
     val currentStation by viewModel.currentStation.collectAsStateWithLifecycle()
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
+    val currentTrackTitle by viewModel.currentTrackTitle.collectAsStateWithLifecycle()
+    val voteMessage by viewModel.voteMessage.collectAsStateWithLifecycle()
+    val sleepTimerEndTime by viewModel.sleepTimerEndTime.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    LaunchedEffect(voteMessage) {
+        voteMessage?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.clearVoteMessage()
+        }
+    }
 
     var showFullscreenPlayer by remember { mutableStateOf(false) }
 
     val woodGrainBackground = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF1A0F07),
-            Color(0xFF231509),
-            Color(0xFF1A0F07),
-            Color(0xFF150B05),
-            Color(0xFF1E1109)
+            Color(0xFFF3E8D6),
+            Color(0xFFEFE3D0),
+            Color(0xFFF5ECDC),
+            Color(0xFFEADCC6),
+            Color(0xFFF1E5D2)
         )
     )
 
@@ -150,6 +184,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                     MiniPlayerBar(
                         station = station,
                         playbackState = playbackState,
+                        trackTitle = currentTrackTitle,
                         favorites = favorites,
                         onTogglePlayPause = { viewModel.togglePlayPause() },
                         onToggleFavorite = { viewModel.toggleFavorite(station) },
@@ -169,11 +204,11 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 }
 
                 NavigationBar(
-                    containerColor = Color(0xFF0D0704),
+                    containerColor = Color(0xFFE8D9C0),
                     tonalElevation = 0.dp,
                     modifier = Modifier.border(
                         width = 1.dp,
-                        color = AmberGlow.copy(alpha = 0.15f),
+                        color = AmberGlow.copy(alpha = 0.25f),
                         shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
                     )
                 ) {
@@ -235,13 +270,15 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 "favorites" -> FavoritesTabScreen(
                     favorites = favorites,
                     onPlay = { viewModel.playStation(it) },
-                    onToggleFavorite = { viewModel.toggleFavorite(it) }
+                    onToggleFavorite = { viewModel.toggleFavorite(it) },
+                    onVote = { viewModel.vote(it) }
                 )
                 "recents" -> RecentsTabScreen(
                     recentlyPlayed = recentlyPlayed,
                     favorites = favorites,
                     onPlay = { viewModel.playStation(it) },
-                    onToggleFavorite = { viewModel.toggleFavorite(it) }
+                    onToggleFavorite = { viewModel.toggleFavorite(it) },
+                    onVote = { viewModel.vote(it) }
                 )
             }
         }
@@ -252,10 +289,14 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
         FullscreenPlayerDialog(
             station = activeStation,
             playbackState = playbackState,
+            trackTitle = currentTrackTitle,
             favorites = favorites,
+            sleepTimerEndTime = sleepTimerEndTime,
             onDismiss = { showFullscreenPlayer = false },
             onTogglePlayPause = { viewModel.togglePlayPause() },
             onToggleFavorite = { viewModel.toggleFavorite(activeStation) },
+            onVote = { viewModel.vote(activeStation) },
+            onSetSleepTimer = { viewModel.setSleepTimer(it) },
             onVolumeChange = { viewModel.setVolume(it) }
         )
     }
@@ -268,6 +309,8 @@ fun DiscoverTabScreen(
     favorites: List<StationEntity>
 ) {
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
+    val sortOrder by viewModel.sortOrder.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -356,6 +399,20 @@ fun DiscoverTabScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        GenreChipsRow(
+            selectedGenre = selectedGenre,
+            onGenreSelected = { viewModel.selectGenre(it) }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        SortRow(
+            sortOrder = sortOrder,
+            onSortSelected = { viewModel.setSortOrder(it) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         BannerAd(modifier = Modifier.fillMaxWidth())
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -412,13 +469,96 @@ fun DiscoverTabScreen(
                                 station = station,
                                 isFav = isFav,
                                 onPlay = { viewModel.playStation(station) },
-                                onToggleFavorite = { viewModel.toggleFavorite(station) }
+                                onToggleFavorite = { viewModel.toggleFavorite(station) },
+                                onVote = { viewModel.vote(station) }
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/** Genre tags offered for one-tap browsing. Label is shown; value is the API tag. */
+private val radioGenres = listOf(
+    "Поп" to "pop",
+    "Фолк" to "folk",
+    "Попфолк" to "chalga",
+    "Новини" to "news",
+    "Рок" to "rock",
+    "Класическа" to "classical",
+    "Джаз" to "jazz",
+    "Денс" to "dance",
+    "Ретро" to "oldies"
+)
+
+@Composable
+fun GenreChipsRow(
+    selectedGenre: String?,
+    onGenreSelected: (String?) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterPill(label = "Всички", selected = selectedGenre == null) { onGenreSelected(null) }
+        radioGenres.forEach { (label, tag) ->
+            FilterPill(label = label, selected = selectedGenre == tag) { onGenreSelected(tag) }
+        }
+    }
+}
+
+@Composable
+fun SortRow(
+    sortOrder: SortOrder,
+    onSortSelected: (SortOrder) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.Sort,
+            contentDescription = null,
+            tint = FadedLabel,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        SortOrder.entries.forEach { order ->
+            FilterPill(label = order.label, selected = sortOrder == order) { onSortSelected(order) }
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+    }
+}
+
+@Composable
+fun FilterPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(if (selected) AmberGlow.copy(alpha = 0.18f) else WalnutMedium)
+            .border(
+                1.dp,
+                if (selected) AmberGlow.copy(alpha = 0.6f) else AmberGlow.copy(alpha = 0.15f),
+                RoundedCornerShape(100.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = FontFamily.Serif,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) AmberGlow else FadedLabel
+        )
     }
 }
 
@@ -447,7 +587,8 @@ fun StationRowItem(
     station: StationEntity,
     isFav: Boolean,
     onPlay: () -> Unit,
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
+    onVote: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(10.dp),
@@ -526,6 +667,13 @@ fun StationRowItem(
                 }
             }
 
+            VoteControl(
+                votes = station.votes,
+                onVote = onVote
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
             IconButton(
                 onClick = onToggleFavorite,
                 modifier = Modifier.size(48.dp)
@@ -540,11 +688,51 @@ fun StationRowItem(
     }
 }
 
+/**
+ * Compact thumbs-up control showing a station's vote tally. Tapping casts a
+ * vote; users may vote as often as they like (the API throttles server-side).
+ */
+@Composable
+fun VoteControl(
+    votes: Int,
+    onVote: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onVote() }
+            .padding(horizontal = 6.dp, vertical = 4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.ThumbUp,
+            contentDescription = "Гласувай",
+            tint = AmberGlow,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = formatVotes(votes),
+            color = AmberGlow,
+            fontFamily = FontFamily.Serif,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+private fun formatVotes(votes: Int): String = when {
+    votes >= 1_000_000 -> "%.1fM".format(votes / 1_000_000.0)
+    votes >= 1_000 -> "%.1fk".format(votes / 1_000.0)
+    else -> votes.toString()
+}
+
 @Composable
 fun FavoritesTabScreen(
     favorites: List<StationEntity>,
     onPlay: (StationEntity) -> Unit,
-    onToggleFavorite: (StationEntity) -> Unit
+    onToggleFavorite: (StationEntity) -> Unit,
+    onVote: (StationEntity) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -608,7 +796,8 @@ fun FavoritesTabScreen(
                     FavoriteGridCard(
                         station = station,
                         onPlay = { onPlay(station) },
-                        onRemove = { onToggleFavorite(station) }
+                        onRemove = { onToggleFavorite(station) },
+                        onVote = { onVote(station) }
                     )
                 }
             }
@@ -620,7 +809,8 @@ fun FavoritesTabScreen(
 fun FavoriteGridCard(
     station: StationEntity,
     onPlay: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onVote: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -698,6 +888,33 @@ fun FavoriteGridCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(100.dp))
+                    .background(BrassGold.copy(alpha = 0.08f))
+                    .border(1.dp, BrassGold.copy(alpha = 0.25f), RoundedCornerShape(100.dp))
+                    .clickable { onVote() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ThumbUp,
+                    contentDescription = "Гласувай",
+                    tint = BrassGold,
+                    modifier = Modifier.size(13.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = formatVotes(station.votes),
+                    color = BrassGold,
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
@@ -707,7 +924,8 @@ fun RecentsTabScreen(
     recentlyPlayed: List<StationEntity>,
     favorites: List<StationEntity>,
     onPlay: (StationEntity) -> Unit,
-    onToggleFavorite: (StationEntity) -> Unit
+    onToggleFavorite: (StationEntity) -> Unit,
+    onVote: (StationEntity) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -771,7 +989,8 @@ fun RecentsTabScreen(
                         station = station,
                         isFav = isFav,
                         onPlay = { onPlay(station) },
-                        onToggleFavorite = { onToggleFavorite(station) }
+                        onToggleFavorite = { onToggleFavorite(station) },
+                        onVote = { onVote(station) }
                     )
                 }
             }
@@ -783,6 +1002,7 @@ fun RecentsTabScreen(
 fun MiniPlayerBar(
     station: StationEntity,
     playbackState: RadioPlaybackState,
+    trackTitle: String?,
     favorites: List<StationEntity>,
     onTogglePlayPause: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -807,16 +1027,16 @@ fun MiniPlayerBar(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF3A2518),
-                        Color(0xFF2C1810),
-                        Color(0xFF1E1109)
+                        Color(0xFFEDDFC8),
+                        Color(0xFFE3D1B3),
+                        Color(0xFFD9C3A0)
                     )
                 )
             )
             .border(
                 width = 2.dp,
                 brush = Brush.verticalGradient(
-                    colors = listOf(BrassGold.copy(alpha = 0.5f), BrassGold.copy(alpha = 0.15f))
+                    colors = listOf(BrassGold.copy(alpha = 0.6f), BrassGold.copy(alpha = 0.2f))
                 ),
                 shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
             )
@@ -891,20 +1111,32 @@ fun MiniPlayerBar(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            text = when (playbackState) {
-                                is RadioPlaybackState.Playing -> "В ЕФИР"
-                                is RadioPlaybackState.Buffering -> "НАСТРОЙКА..."
-                                is RadioPlaybackState.Paused -> "ПАУЗА"
-                                is RadioPlaybackState.Error -> "НЯМА СИГНАЛ"
-                                else -> "..."
-                            },
-                            color = if (isPlayingMode) PilotLampGreen.copy(alpha = 0.8f) else FadedLabel,
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.5.sp
-                        )
+                        if (!trackTitle.isNullOrBlank() && isPlayingMode) {
+                            Text(
+                                text = trackTitle,
+                                color = AmberGlow.copy(alpha = 0.85f),
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            Text(
+                                text = when (playbackState) {
+                                    is RadioPlaybackState.Playing -> "В ЕФИР"
+                                    is RadioPlaybackState.Buffering -> "НАСТРОЙКА..."
+                                    is RadioPlaybackState.Paused -> "ПАУЗА"
+                                    is RadioPlaybackState.Error -> "НЯМА СИГНАЛ"
+                                    else -> "..."
+                                },
+                                color = if (isPlayingMode) PilotLampGreen.copy(alpha = 0.8f) else FadedLabel,
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.5.sp
+                            )
+                        }
                     }
                 }
             }
@@ -942,7 +1174,7 @@ fun MiniPlayerBar(
                     .size(40.dp)
                     .background(
                         Brush.radialGradient(
-                            colors = listOf(MahoganyPanel, Color(0xFF2A1508))
+                            colors = listOf(Color(0xFFE7CBA0), MahoganyPanel)
                         ),
                         CircleShape
                     )
@@ -1059,9 +1291,9 @@ fun RadioKnob(
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFF4A3020),
-                        Color(0xFF2A1508),
-                        Color(0xFF1A0A02)
+                        Color(0xFFE9D2AC),
+                        Color(0xFFCFB084),
+                        Color(0xFFB08F5E)
                     )
                 ),
                 CircleShape
@@ -1114,15 +1346,20 @@ fun RadioKnob(
 fun FullscreenPlayerDialog(
     station: StationEntity,
     playbackState: RadioPlaybackState,
+    trackTitle: String?,
     favorites: List<StationEntity>,
+    sleepTimerEndTime: Long?,
     onDismiss: () -> Unit,
     onTogglePlayPause: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onVote: () -> Unit,
+    onSetSleepTimer: (Int) -> Unit,
     onVolumeChange: (Float) -> Unit
 ) {
     val isFav = favorites.any { it.stationuuid == station.stationuuid }
     var scaleVolume by remember { mutableStateOf(1.0f) }
     val isPlayingMode = playbackState is RadioPlaybackState.Playing
+    val context = LocalContext.current
 
     val infiniteTransition = rememberInfiniteTransition()
     val pilotGlow by infiniteTransition.animateFloat(
@@ -1139,7 +1376,7 @@ fun FullscreenPlayerDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF0A0604)
+            color = Color(0xFFF1E5D2)
         ) {
             Box(
                 modifier = Modifier
@@ -1147,8 +1384,8 @@ fun FullscreenPlayerDialog(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF1A0F07),
-                                Color(0xFF0D0704)
+                                Color(0xFFF5ECDC),
+                                Color(0xFFEADCC6)
                             )
                         )
                     )
@@ -1163,11 +1400,11 @@ fun FullscreenPlayerDialog(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF4A2C1A),
-                                    Color(0xFF3A2010),
-                                    Color(0xFF2C1810),
-                                    Color(0xFF3A2010),
-                                    Color(0xFF4A2C1A)
+                                    Color(0xFFEFDDC0),
+                                    Color(0xFFE7D0AE),
+                                    Color(0xFFDEC49E),
+                                    Color(0xFFE7D0AE),
+                                    Color(0xFFEFDDC0)
                                 )
                             )
                         )
@@ -1175,13 +1412,14 @@ fun FullscreenPlayerDialog(
                             3.dp,
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    BrassGold.copy(alpha = 0.5f),
-                                    BrassGold.copy(alpha = 0.2f),
-                                    BrassGold.copy(alpha = 0.5f)
+                                    BrassGold.copy(alpha = 0.6f),
+                                    BrassGold.copy(alpha = 0.3f),
+                                    BrassGold.copy(alpha = 0.6f)
                                 )
                             ),
                             RoundedCornerShape(16.dp)
                         )
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -1218,16 +1456,41 @@ fun FullscreenPlayerDialog(
                                 letterSpacing = 3.sp
                             )
                         }
-                        IconButton(
-                            onClick = onToggleFavorite,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
-                                contentDescription = "Любими",
-                                tint = if (isFav) AmberBright else FadedLabel,
-                                modifier = Modifier.size(18.dp)
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(
+                                            Intent.EXTRA_TEXT,
+                                            "🎶 ${station.name}\n${station.urlResolved}\n\nЧрез приложението Радио България"
+                                        )
+                                    }
+                                    context.startActivity(
+                                        Intent.createChooser(shareIntent, "Сподели станция")
+                                    )
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = "Сподели",
+                                    tint = FadedLabel,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = onToggleFavorite,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
+                                    contentDescription = "Любими",
+                                    tint = if (isFav) AmberBright else FadedLabel,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
 
@@ -1329,11 +1592,14 @@ fun FullscreenPlayerDialog(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = station.language.ifEmpty { "България" },
+                                text = if (!trackTitle.isNullOrBlank()) trackTitle
+                                       else station.language.ifEmpty { "България" },
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 12.sp,
                                 color = CreamWhite.copy(alpha = 0.6f),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -1377,6 +1643,34 @@ fun FullscreenPlayerDialog(
                             fontSize = 11.sp,
                             color = if (isPlayingMode) PilotLampGreen else FadedLabel,
                             letterSpacing = 2.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(BrassGold.copy(alpha = 0.08f))
+                            .border(1.dp, BrassGold.copy(alpha = 0.3f), RoundedCornerShape(100.dp))
+                            .clickable { onVote() }
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ThumbUp,
+                            contentDescription = "Гласувай",
+                            tint = BrassGold,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${formatVotes(station.votes)} гласа",
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = BrassGold,
+                            letterSpacing = 1.sp
                         )
                     }
 
@@ -1530,8 +1824,113 @@ fun FullscreenPlayerDialog(
                         )
                         Icon(Icons.Default.VolumeUp, contentDescription = null, tint = AmberGlow, modifier = Modifier.size(16.dp))
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    SleepTimerSection(
+                        sleepTimerEndTime = sleepTimerEndTime,
+                        onSetSleepTimer = onSetSleepTimer
+                    )
                 }
             }
         }
+    }
+}
+
+/**
+ * Sleep-timer picker for the player. Choosing a duration schedules playback
+ * to pause after that many minutes; "Изкл" cancels it. A live countdown is
+ * shown while a timer is running.
+ */
+@Composable
+fun SleepTimerSection(
+    sleepTimerEndTime: Long?,
+    onSetSleepTimer: (Int) -> Unit
+) {
+    val options = listOf(15, 30, 45, 60)
+
+    val remainingText by produceState(initialValue = "", sleepTimerEndTime) {
+        if (sleepTimerEndTime == null) {
+            value = ""
+        } else {
+            while (true) {
+                val remaining = sleepTimerEndTime - System.currentTimeMillis()
+                if (remaining <= 0) {
+                    value = ""
+                    break
+                }
+                val totalSec = remaining / 1000
+                value = "%02d:%02d".format(totalSec / 60, totalSec % 60)
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Bedtime,
+                contentDescription = null,
+                tint = BrassGold,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = if (remainingText.isNotEmpty()) "ТАЙМЕР ЗА СЪН · $remainingText" else "ТАЙМЕР ЗА СЪН",
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                fontSize = 9.sp,
+                color = BrassGold.copy(alpha = 0.8f),
+                letterSpacing = 1.5.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+        ) {
+            val isActive = sleepTimerEndTime != null
+            SleepTimerPill(label = "Изкл", selected = !isActive) { onSetSleepTimer(0) }
+            options.forEach { minutes ->
+                SleepTimerPill(label = minutes.toString(), selected = false) {
+                    onSetSleepTimer(minutes)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SleepTimerPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(
+                if (selected) BrassGold.copy(alpha = 0.25f) else BrassGold.copy(alpha = 0.06f)
+            )
+            .border(
+                1.dp,
+                BrassGold.copy(alpha = if (selected) 0.6f else 0.25f),
+                RoundedCornerShape(100.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = if (selected) AmberGlow else BrassGold
+        )
     }
 }
