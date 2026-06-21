@@ -3,14 +3,11 @@ package com.mindtocode.radiobulgaria.data.repository
 import com.mindtocode.radiobulgaria.data.database.StationDao
 import com.mindtocode.radiobulgaria.data.model.NetworkStation
 import com.mindtocode.radiobulgaria.data.model.StationEntity
-import com.mindtocode.radiobulgaria.data.model.VotedStationEntity
 import com.mindtocode.radiobulgaria.data.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
 sealed class VoteResult {
     object Success : VoteResult()
-    object AlreadyVoted : VoteResult()
     data class Error(val message: String) : VoteResult()
 }
 
@@ -20,8 +17,6 @@ class RadioRepository(
 ) {
     val favorites: Flow<List<StationEntity>> = stationDao.getFavorites()
     val recentlyPlayed: Flow<List<StationEntity>> = stationDao.getRecentlyPlayed()
-    val votedStationIds: Flow<Set<String>> =
-        stationDao.getVotedStationIds().map { it.toSet() }
 
     suspend fun getTopStations(): List<StationEntity> {
         return radioBrowserApi.getTopStations().map { it.toEntity() }
@@ -62,17 +57,14 @@ class RadioRepository(
     }
 
     /**
-     * Casts a single vote for the station via the Radio Browser API and
-     * records it locally so the user cannot vote for the same station again.
+     * Casts a vote for the station via the Radio Browser API. There is no
+     * local limit on how often a user may vote; the API applies its own
+     * server-side throttling per client.
      */
     suspend fun voteForStation(station: StationEntity): VoteResult {
-        if (stationDao.hasVoted(station.stationuuid)) {
-            return VoteResult.AlreadyVoted
-        }
         return try {
             val response = radioBrowserApi.voteForStation(station.stationuuid)
             if (response.ok) {
-                stationDao.insertVote(VotedStationEntity(station.stationuuid))
                 stationDao.incrementVotes(station.stationuuid)
                 VoteResult.Success
             } else {

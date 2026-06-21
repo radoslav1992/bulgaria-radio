@@ -11,6 +11,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -128,8 +130,8 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
     val recentlyPlayed by viewModel.recentlyPlayed.collectAsStateWithLifecycle()
     val currentStation by viewModel.currentStation.collectAsStateWithLifecycle()
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
-    val votedStationIds by viewModel.votedStationIds.collectAsStateWithLifecycle()
     val voteMessage by viewModel.voteMessage.collectAsStateWithLifecycle()
+    val sleepTimerEndTime by viewModel.sleepTimerEndTime.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     LaunchedEffect(voteMessage) {
@@ -244,7 +246,6 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 )
                 "favorites" -> FavoritesTabScreen(
                     favorites = favorites,
-                    votedStationIds = votedStationIds,
                     onPlay = { viewModel.playStation(it) },
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
                     onVote = { viewModel.vote(it) }
@@ -252,7 +253,6 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 "recents" -> RecentsTabScreen(
                     recentlyPlayed = recentlyPlayed,
                     favorites = favorites,
-                    votedStationIds = votedStationIds,
                     onPlay = { viewModel.playStation(it) },
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
                     onVote = { viewModel.vote(it) }
@@ -267,11 +267,12 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
             station = activeStation,
             playbackState = playbackState,
             favorites = favorites,
-            hasVoted = votedStationIds.contains(activeStation.stationuuid),
+            sleepTimerEndTime = sleepTimerEndTime,
             onDismiss = { showFullscreenPlayer = false },
             onTogglePlayPause = { viewModel.togglePlayPause() },
             onToggleFavorite = { viewModel.toggleFavorite(activeStation) },
             onVote = { viewModel.vote(activeStation) },
+            onSetSleepTimer = { viewModel.setSleepTimer(it) },
             onVolumeChange = { viewModel.setVolume(it) }
         )
     }
@@ -284,7 +285,6 @@ fun DiscoverTabScreen(
     favorites: List<StationEntity>
 ) {
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val votedIds by viewModel.votedStationIds.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -428,7 +428,6 @@ fun DiscoverTabScreen(
                             StationRowItem(
                                 station = station,
                                 isFav = isFav,
-                                hasVoted = votedIds.contains(station.stationuuid),
                                 onPlay = { viewModel.playStation(station) },
                                 onToggleFavorite = { viewModel.toggleFavorite(station) },
                                 onVote = { viewModel.vote(station) }
@@ -465,7 +464,6 @@ fun BannerAd(modifier: Modifier = Modifier) {
 fun StationRowItem(
     station: StationEntity,
     isFav: Boolean,
-    hasVoted: Boolean,
     onPlay: () -> Unit,
     onToggleFavorite: () -> Unit,
     onVote: () -> Unit
@@ -549,7 +547,6 @@ fun StationRowItem(
 
             VoteControl(
                 votes = station.votes,
-                hasVoted = hasVoted,
                 onVote = onVote
             )
 
@@ -571,31 +568,30 @@ fun StationRowItem(
 
 /**
  * Compact thumbs-up control showing a station's vote tally. Tapping casts a
- * single vote; once the user has voted it becomes highlighted and inert.
+ * vote; users may vote as often as they like (the API throttles server-side).
  */
 @Composable
 fun VoteControl(
     votes: Int,
-    hasVoted: Boolean,
     onVote: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .clickable(enabled = !hasVoted) { onVote() }
+            .clickable { onVote() }
             .padding(horizontal = 6.dp, vertical = 4.dp)
     ) {
         Icon(
             imageVector = Icons.Default.ThumbUp,
-            contentDescription = if (hasVoted) "Гласувано" else "Гласувай",
-            tint = if (hasVoted) AmberBright else FadedLabel,
+            contentDescription = "Гласувай",
+            tint = AmberGlow,
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = formatVotes(votes),
-            color = if (hasVoted) AmberGlow else FadedLabel,
+            color = AmberGlow,
             fontFamily = FontFamily.Serif,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold
@@ -612,7 +608,6 @@ private fun formatVotes(votes: Int): String = when {
 @Composable
 fun FavoritesTabScreen(
     favorites: List<StationEntity>,
-    votedStationIds: Set<String>,
     onPlay: (StationEntity) -> Unit,
     onToggleFavorite: (StationEntity) -> Unit,
     onVote: (StationEntity) -> Unit
@@ -678,7 +673,6 @@ fun FavoritesTabScreen(
                 items(favorites, key = { it.stationuuid }) { station ->
                     FavoriteGridCard(
                         station = station,
-                        hasVoted = votedStationIds.contains(station.stationuuid),
                         onPlay = { onPlay(station) },
                         onRemove = { onToggleFavorite(station) },
                         onVote = { onVote(station) }
@@ -692,7 +686,6 @@ fun FavoritesTabScreen(
 @Composable
 fun FavoriteGridCard(
     station: StationEntity,
-    hasVoted: Boolean,
     onPlay: () -> Unit,
     onRemove: () -> Unit,
     onVote: () -> Unit
@@ -781,20 +774,20 @@ fun FavoriteGridCard(
                     .clip(RoundedCornerShape(100.dp))
                     .background(BrassGold.copy(alpha = 0.08f))
                     .border(1.dp, BrassGold.copy(alpha = 0.25f), RoundedCornerShape(100.dp))
-                    .clickable(enabled = !hasVoted) { onVote() }
+                    .clickable { onVote() }
                     .padding(horizontal = 10.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Default.ThumbUp,
-                    contentDescription = if (hasVoted) "Гласувано" else "Гласувай",
-                    tint = if (hasVoted) AmberBright else BrassGold,
+                    contentDescription = "Гласувай",
+                    tint = BrassGold,
                     modifier = Modifier.size(13.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = formatVotes(station.votes),
-                    color = if (hasVoted) AmberGlow else BrassGold,
+                    color = BrassGold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
@@ -808,7 +801,6 @@ fun FavoriteGridCard(
 fun RecentsTabScreen(
     recentlyPlayed: List<StationEntity>,
     favorites: List<StationEntity>,
-    votedStationIds: Set<String>,
     onPlay: (StationEntity) -> Unit,
     onToggleFavorite: (StationEntity) -> Unit,
     onVote: (StationEntity) -> Unit
@@ -874,7 +866,6 @@ fun RecentsTabScreen(
                     StationRowItem(
                         station = station,
                         isFav = isFav,
-                        hasVoted = votedStationIds.contains(station.stationuuid),
                         onPlay = { onPlay(station) },
                         onToggleFavorite = { onToggleFavorite(station) },
                         onVote = { onVote(station) }
@@ -1221,11 +1212,12 @@ fun FullscreenPlayerDialog(
     station: StationEntity,
     playbackState: RadioPlaybackState,
     favorites: List<StationEntity>,
-    hasVoted: Boolean,
+    sleepTimerEndTime: Long?,
     onDismiss: () -> Unit,
     onTogglePlayPause: () -> Unit,
     onToggleFavorite: () -> Unit,
     onVote: () -> Unit,
+    onSetSleepTimer: (Int) -> Unit,
     onVolumeChange: (Float) -> Unit
 ) {
     val isFav = favorites.any { it.stationuuid == station.stationuuid }
@@ -1290,6 +1282,7 @@ fun FullscreenPlayerDialog(
                             ),
                             RoundedCornerShape(16.dp)
                         )
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -1495,14 +1488,14 @@ fun FullscreenPlayerDialog(
                             .clip(RoundedCornerShape(100.dp))
                             .background(BrassGold.copy(alpha = 0.08f))
                             .border(1.dp, BrassGold.copy(alpha = 0.3f), RoundedCornerShape(100.dp))
-                            .clickable(enabled = !hasVoted) { onVote() }
+                            .clickable { onVote() }
                             .padding(horizontal = 14.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.ThumbUp,
-                            contentDescription = if (hasVoted) "Гласувано" else "Гласувай",
-                            tint = if (hasVoted) AmberBright else BrassGold,
+                            contentDescription = "Гласувай",
+                            tint = BrassGold,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -1511,7 +1504,7 @@ fun FullscreenPlayerDialog(
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = if (hasVoted) AmberGlow else BrassGold,
+                            color = BrassGold,
                             letterSpacing = 1.sp
                         )
                     }
@@ -1666,8 +1659,113 @@ fun FullscreenPlayerDialog(
                         )
                         Icon(Icons.Default.VolumeUp, contentDescription = null, tint = AmberGlow, modifier = Modifier.size(16.dp))
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    SleepTimerSection(
+                        sleepTimerEndTime = sleepTimerEndTime,
+                        onSetSleepTimer = onSetSleepTimer
+                    )
                 }
             }
         }
+    }
+}
+
+/**
+ * Sleep-timer picker for the player. Choosing a duration schedules playback
+ * to pause after that many minutes; "Изкл" cancels it. A live countdown is
+ * shown while a timer is running.
+ */
+@Composable
+fun SleepTimerSection(
+    sleepTimerEndTime: Long?,
+    onSetSleepTimer: (Int) -> Unit
+) {
+    val options = listOf(15, 30, 45, 60)
+
+    val remainingText by produceState(initialValue = "", sleepTimerEndTime) {
+        if (sleepTimerEndTime == null) {
+            value = ""
+        } else {
+            while (true) {
+                val remaining = sleepTimerEndTime - System.currentTimeMillis()
+                if (remaining <= 0) {
+                    value = ""
+                    break
+                }
+                val totalSec = remaining / 1000
+                value = "%02d:%02d".format(totalSec / 60, totalSec % 60)
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Bedtime,
+                contentDescription = null,
+                tint = BrassGold,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = if (remainingText.isNotEmpty()) "ТАЙМЕР ЗА СЪН · $remainingText" else "ТАЙМЕР ЗА СЪН",
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                fontSize = 9.sp,
+                color = BrassGold.copy(alpha = 0.8f),
+                letterSpacing = 1.5.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+        ) {
+            val isActive = sleepTimerEndTime != null
+            SleepTimerPill(label = "Изкл", selected = !isActive) { onSetSleepTimer(0) }
+            options.forEach { minutes ->
+                SleepTimerPill(label = minutes.toString(), selected = false) {
+                    onSetSleepTimer(minutes)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SleepTimerPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(
+                if (selected) BrassGold.copy(alpha = 0.25f) else BrassGold.copy(alpha = 0.06f)
+            )
+            .border(
+                1.dp,
+                BrassGold.copy(alpha = if (selected) 0.6f else 0.25f),
+                RoundedCornerShape(100.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = if (selected) AmberGlow else BrassGold
+        )
     }
 }

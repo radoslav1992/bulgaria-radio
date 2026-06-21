@@ -12,6 +12,8 @@ import com.mindtocode.radiobulgaria.data.repository.RadioRepository
 import com.mindtocode.radiobulgaria.data.repository.VoteResult
 import com.mindtocode.radiobulgaria.player.RadioPlaybackState
 import com.mindtocode.radiobulgaria.player.RadioPlayerManager
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -43,11 +45,13 @@ class RadioViewModel(
     val recentlyPlayed: StateFlow<List<StationEntity>> = repository.recentlyPlayed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val votedStationIds: StateFlow<Set<String>> = repository.votedStationIds
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
-
     private val _voteMessage = MutableStateFlow<String?>(null)
     val voteMessage = _voteMessage.asStateFlow()
+
+    /** Epoch millis at which the sleep timer will pause playback, or null if off. */
+    private val _sleepTimerEndTime = MutableStateFlow<Long?>(null)
+    val sleepTimerEndTime = _sleepTimerEndTime.asStateFlow()
+    private var sleepTimerJob: Job? = null
 
     init {
         fetchFeatured()
@@ -104,7 +108,6 @@ class RadioViewModel(
 
     fun vote(station: StationEntity) {
         viewModelScope.launch {
-            if (votedStationIds.value.contains(station.stationuuid)) return@launch
             when (val result = repository.voteForStation(station)) {
                 is VoteResult.Success -> {
                     // Optimistically reflect the new tally in the visible list.
@@ -120,9 +123,6 @@ class RadioViewModel(
                     }
                     _voteMessage.value = "Благодарим за гласа!"
                 }
-                is VoteResult.AlreadyVoted -> {
-                    _voteMessage.value = "Вече сте гласували за тази станция."
-                }
                 is VoteResult.Error -> {
                     _voteMessage.value = result.message
                 }
@@ -132,6 +132,31 @@ class RadioViewModel(
 
     fun clearVoteMessage() {
         _voteMessage.value = null
+    }
+
+    /**
+     * Starts (or replaces) a sleep timer that pauses playback after [minutes].
+     * Passing a non-positive value cancels any active timer.
+     */
+    fun setSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        if (minutes <= 0) {
+            _sleepTimerEndTime.value = null
+            return
+        }
+        val durationMillis = minutes * 60_000L
+        _sleepTimerEndTime.value = System.currentTimeMillis() + durationMillis
+        sleepTimerJob = viewModelScope.launch {
+            delay(durationMillis)
+            playerManager.pause()
+            _sleepTimerEndTime.value = null
+        }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _sleepTimerEndTime.value = null
     }
 
     fun toggleFavorite(station: StationEntity) {
