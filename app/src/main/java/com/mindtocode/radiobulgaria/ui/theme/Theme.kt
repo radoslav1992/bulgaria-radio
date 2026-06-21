@@ -1,11 +1,11 @@
 package com.mindtocode.radiobulgaria.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val VintageRadioColorScheme = darkColorScheme(
+private val VintageRadioColorScheme = lightColorScheme(
     primary = AmberGlow,
     onPrimary = VinylBlack,
     primaryContainer = MahoganyPanel,
@@ -28,7 +28,7 @@ private val VintageRadioColorScheme = darkColorScheme(
 
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = false,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {

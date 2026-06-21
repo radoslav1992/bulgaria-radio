@@ -133,11 +133,11 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
 
     val woodGrainBackground = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF1A0F07),
-            Color(0xFF231509),
-            Color(0xFF1A0F07),
-            Color(0xFF150B05),
-            Color(0xFF1E1109)
+            Color(0xFFF3E8D6),
+            Color(0xFFEFE3D0),
+            Color(0xFFF5ECDC),
+            Color(0xFFEADCC6),
+            Color(0xFFF1E5D2)
         )
     )
 
@@ -169,11 +169,11 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                 }
 
                 NavigationBar(
-                    containerColor = Color(0xFF0D0704),
+                    containerColor = Color(0xFFE8D9C0),
                     tonalElevation = 0.dp,
                     modifier = Modifier.border(
                         width = 1.dp,
-                        color = AmberGlow.copy(alpha = 0.15f),
+                        color = AmberGlow.copy(alpha = 0.25f),
                         shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
                     )
                 ) {
@@ -807,16 +807,16 @@ fun MiniPlayerBar(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF3A2518),
-                        Color(0xFF2C1810),
-                        Color(0xFF1E1109)
+                        Color(0xFFEDDFC8),
+                        Color(0xFFE3D1B3),
+                        Color(0xFFD9C3A0)
                     )
                 )
             )
             .border(
                 width = 2.dp,
                 brush = Brush.verticalGradient(
-                    colors = listOf(BrassGold.copy(alpha = 0.5f), BrassGold.copy(alpha = 0.15f))
+                    colors = listOf(BrassGold.copy(alpha = 0.6f), BrassGold.copy(alpha = 0.2f))
                 ),
                 shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
             )
@@ -942,7 +942,7 @@ fun MiniPlayerBar(
                     .size(40.dp)
                     .background(
                         Brush.radialGradient(
-                            colors = listOf(MahoganyPanel, Color(0xFF2A1508))
+                            colors = listOf(Color(0xFFE7CBA0), MahoganyPanel)
                         ),
                         CircleShape
                     )
@@ -1059,9 +1059,9 @@ fun RadioKnob(
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFF4A3020),
-                        Color(0xFF2A1508),
-                        Color(0xFF1A0A02)
+                        Color(0xFFE9D2AC),
+                        Color(0xFFCFB084),
+                        Color(0xFFB08F5E)
                     )
                 ),
                 CircleShape
@@ -1139,7 +1139,7 @@ fun FullscreenPlayerDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF0A0604)
+            color = Color(0xFFF1E5D2)
         ) {
             Box(
                 modifier = Modifier
@@ -1147,8 +1147,8 @@ fun FullscreenPlayerDialog(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF1A0F07),
-                                Color(0xFF0D0704)
+                                Color(0xFFF5ECDC),
+                                Color(0xFFEADCC6)
                             )
                         )
                     )
@@ -1163,11 +1163,11 @@ fun FullscreenPlayerDialog(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF4A2C1A),
-                                    Color(0xFF3A2010),
-                                    Color(0xFF2C1810),
-                                    Color(0xFF3A2010),
-                                    Color(0xFF4A2C1A)
+                                    Color(0xFFEFDDC0),
+                                    Color(0xFFE7D0AE),
+                                    Color(0xFFDEC49E),
+                                    Color(0xFFE7D0AE),
+                                    Color(0xFFEFDDC0)
                                 )
                             )
                         )
@@ -1175,9 +1175,9 @@ fun FullscreenPlayerDialog(
                             3.dp,
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    BrassGold.copy(alpha = 0.5f),
-                                    BrassGold.copy(alpha = 0.2f),
-                                    BrassGold.copy(alpha = 0.5f)
+                                    BrassGold.copy(alpha = 0.6f),
+                                    BrassGold.copy(alpha = 0.3f),
+                                    BrassGold.copy(alpha = 0.6f)
                                 )
                             ),
                             RoundedCornerShape(16.dp)

@@ -2,25 +2,27 @@ package com.mindtocode.radiobulgaria.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Vintage Radio Palette
-val WalnutDark = Color(0xFF1A0F07)
-val WalnutMedium = Color(0xFF2C1810)
-val WalnutLight = Color(0xFF3D2317)
-val MahoganyPanel = Color(0xFF4A2C1A)
-val LeatherBrown = Color(0xFF5C3A22)
+// Vintage Radio Palette — Light edition
+// Surfaces are warm cream/parchment tones; text and accents are deepened
+// for readable contrast on a light background.
+val WalnutDark = Color(0xFFEFE3D0)   // app background (light parchment)
+val WalnutMedium = Color(0xFFFBF4E8) // cards / surface (warm cream)
+val WalnutLight = Color(0xFFE8D9C0)  // surface variant
+val MahoganyPanel = Color(0xFFD9BE99) // containers (light wood)
+val LeatherBrown = Color(0xFFC9A87E)
 
-val AmberGlow = Color(0xFFD4A574)
-val AmberBright = Color(0xFFE8B86D)
-val BrassGold = Color(0xFFC9A84C)
-val BrassLight = Color(0xFFDCC17E)
+val AmberGlow = Color(0xFFA56A18)    // primary accent / titles (deep amber)
+val AmberBright = Color(0xFFB87C22)  // brighter accent
+val BrassGold = Color(0xFF94701F)    // brass accents / tags
+val BrassLight = Color(0xFFC9A84C)   // brass highlights
 
-val VintageGreen = Color(0xFF4A7C59)
+val VintageGreen = Color(0xFF3E6B4C)
 val DialGreen = Color(0xFF6BAF7A)
-val TubeOrange = Color(0xFFE8723A)
+val TubeOrange = Color(0xFFD35F28)
 
-val CreamWhite = Color(0xFFF5E6D3)
-val ParchmentText = Color(0xFFE8D5BC)
-val FadedLabel = Color(0xFF9C8B7A)
+val CreamWhite = Color(0xFF2C1810)   // primary text (dark walnut)
+val ParchmentText = Color(0xFF3D2317) // body text
+val FadedLabel = Color(0xFF7A6147)   // secondary labels
 
 val RadioRed = Color(0xFFC44536)
 val VinylBlack = Color(0xFF1C1108)
