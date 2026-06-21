@@ -1,10 +1,14 @@
 package com.mindtocode.radiobulgaria
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -72,10 +76,16 @@ import com.google.android.ump.UserMessagingPlatform
 class MainActivity : ComponentActivity() {
     private lateinit var consentInformation: ConsentInformation
 
+    // Permission to show the media-playback notification (Android 13+).
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* Playback works regardless; the notification just won't show if denied. */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         requestConsent()
+        maybeRequestNotificationPermission()
         setContent {
             MyApplicationTheme {
                 val context = LocalContext.current
@@ -97,6 +107,14 @@ class MainActivity : ComponentActivity() {
                     RadioAppMainScreen(viewModel)
                 }
             }
+        }
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -130,6 +148,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
     val recentlyPlayed by viewModel.recentlyPlayed.collectAsStateWithLifecycle()
     val currentStation by viewModel.currentStation.collectAsStateWithLifecycle()
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
+    val currentTrackTitle by viewModel.currentTrackTitle.collectAsStateWithLifecycle()
     val voteMessage by viewModel.voteMessage.collectAsStateWithLifecycle()
     val sleepTimerEndTime by viewModel.sleepTimerEndTime.collectAsStateWithLifecycle()
 
@@ -162,6 +181,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
                     MiniPlayerBar(
                         station = station,
                         playbackState = playbackState,
+                        trackTitle = currentTrackTitle,
                         favorites = favorites,
                         onTogglePlayPause = { viewModel.togglePlayPause() },
                         onToggleFavorite = { viewModel.toggleFavorite(station) },
@@ -266,6 +286,7 @@ fun RadioAppMainScreen(viewModel: RadioViewModel) {
         FullscreenPlayerDialog(
             station = activeStation,
             playbackState = playbackState,
+            trackTitle = currentTrackTitle,
             favorites = favorites,
             sleepTimerEndTime = sleepTimerEndTime,
             onDismiss = { showFullscreenPlayer = false },
@@ -880,6 +901,7 @@ fun RecentsTabScreen(
 fun MiniPlayerBar(
     station: StationEntity,
     playbackState: RadioPlaybackState,
+    trackTitle: String?,
     favorites: List<StationEntity>,
     onTogglePlayPause: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -988,20 +1010,32 @@ fun MiniPlayerBar(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            text = when (playbackState) {
-                                is RadioPlaybackState.Playing -> "В ЕФИР"
-                                is RadioPlaybackState.Buffering -> "НАСТРОЙКА..."
-                                is RadioPlaybackState.Paused -> "ПАУЗА"
-                                is RadioPlaybackState.Error -> "НЯМА СИГНАЛ"
-                                else -> "..."
-                            },
-                            color = if (isPlayingMode) PilotLampGreen.copy(alpha = 0.8f) else FadedLabel,
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.5.sp
-                        )
+                        if (!trackTitle.isNullOrBlank() && isPlayingMode) {
+                            Text(
+                                text = trackTitle,
+                                color = AmberGlow.copy(alpha = 0.85f),
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            Text(
+                                text = when (playbackState) {
+                                    is RadioPlaybackState.Playing -> "В ЕФИР"
+                                    is RadioPlaybackState.Buffering -> "НАСТРОЙКА..."
+                                    is RadioPlaybackState.Paused -> "ПАУЗА"
+                                    is RadioPlaybackState.Error -> "НЯМА СИГНАЛ"
+                                    else -> "..."
+                                },
+                                color = if (isPlayingMode) PilotLampGreen.copy(alpha = 0.8f) else FadedLabel,
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.5.sp
+                            )
+                        }
                     }
                 }
             }
@@ -1211,6 +1245,7 @@ fun RadioKnob(
 fun FullscreenPlayerDialog(
     station: StationEntity,
     playbackState: RadioPlaybackState,
+    trackTitle: String?,
     favorites: List<StationEntity>,
     sleepTimerEndTime: Long?,
     onDismiss: () -> Unit,
@@ -1430,11 +1465,14 @@ fun FullscreenPlayerDialog(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = station.language.ifEmpty { "България" },
+                                text = if (!trackTitle.isNullOrBlank()) trackTitle
+                                       else station.language.ifEmpty { "България" },
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 12.sp,
                                 color = CreamWhite.copy(alpha = 0.6f),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

@@ -38,6 +38,7 @@ class RadioViewModel(
 
     val playbackState: StateFlow<RadioPlaybackState> = playerManager.playbackState
     val currentStation: StateFlow<StationEntity?> = playerManager.currentStation
+    val currentTrackTitle: StateFlow<String?> = playerManager.currentTrackTitle
 
     val favorites: StateFlow<List<StationEntity>> = repository.favorites
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -95,6 +96,7 @@ class RadioViewModel(
         playerManager.play(station)
         viewModelScope.launch {
             repository.recordPlayback(station)
+            repository.registerStationClick(station)
         }
     }
 

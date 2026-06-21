@@ -31,4 +31,14 @@ interface RadioBrowserApi {
     suspend fun voteForStation(
         @Path("stationuuid") stationuuid: String
     ): VoteResponse
+
+    /**
+     * Registers a "click" (a play) for the station. Radio Browser uses this to
+     * compute the click-count rankings the app displays, so it should be called
+     * whenever a user starts listening to a station.
+     */
+    @GET("json/url/{stationuuid}")
+    suspend fun registerClick(
+        @Path("stationuuid") stationuuid: String
+    ): VoteResponse
 }

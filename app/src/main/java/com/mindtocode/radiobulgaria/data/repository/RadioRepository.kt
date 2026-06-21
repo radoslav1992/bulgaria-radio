@@ -75,6 +75,18 @@ class RadioRepository(
         }
     }
 
+    /**
+     * Reports that the user started playing this station so it counts towards
+     * the Radio Browser click-count rankings. Best-effort; failures are ignored.
+     */
+    suspend fun registerStationClick(station: StationEntity) {
+        try {
+            radioBrowserApi.registerClick(station.stationuuid)
+        } catch (_: Exception) {
+            // Non-critical telemetry; ignore network/parse errors.
+        }
+    }
+
     private fun NetworkStation.toEntity(): StationEntity {
         return StationEntity(
             stationuuid = this.stationuuid,
