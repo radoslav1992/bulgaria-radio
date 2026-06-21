@@ -24,6 +24,13 @@ sealed class StationsUiState {
     data class Error(val message: String) : StationsUiState()
 }
 
+/** How the discover list is ordered. */
+enum class SortOrder(val label: String) {
+    VOTES("Гласове"),
+    CLICKS("Популярни"),
+    NAME("Име")
+}
+
 class RadioViewModel(
     application: Application,
     private val repository: RadioRepository,
@@ -49,6 +56,13 @@ class RadioViewModel(
     private val _voteMessage = MutableStateFlow<String?>(null)
     val voteMessage = _voteMessage.asStateFlow()
 
+    /** Currently selected genre tag for browsing, or null when not filtering by genre. */
+    private val _selectedGenre = MutableStateFlow<String?>(null)
+    val selectedGenre = _selectedGenre.asStateFlow()
+
+    private val _sortOrder = MutableStateFlow(SortOrder.VOTES)
+    val sortOrder = _sortOrder.asStateFlow()
+
     /** Epoch millis at which the sleep timer will pause playback, or null if off. */
     private val _sleepTimerEndTime = MutableStateFlow<Long?>(null)
     val sleepTimerEndTime = _sleepTimerEndTime.asStateFlow()
@@ -62,32 +76,55 @@ class RadioViewModel(
         _searchQuery.value = query
     }
 
+    /** Retained for the init/error-retry call sites; loads with current filters. */
     fun fetchFeatured() {
-        viewModelScope.launch {
-            _stationsState.value = StationsUiState.Loading
-            try {
-                val stations = repository.getTopStations()
-                _stationsState.value = StationsUiState.Success(stations)
-            } catch (e: Exception) {
-                _stationsState.value = StationsUiState.Error(e.localizedMessage ?: "Грешка при зареждане на станции")
-            }
-        }
+        loadStations()
     }
 
     fun performSearch() {
+        // Typing a free-text query exits genre-browse mode.
+        _selectedGenre.value = null
+        loadStations()
+    }
+
+    /** Selects a genre tag to browse (null clears it), then reloads. */
+    fun selectGenre(tag: String?) {
+        _selectedGenre.value = tag
+        if (tag != null) _searchQuery.value = ""
+        loadStations()
+    }
+
+    fun setSortOrder(order: SortOrder) {
+        _sortOrder.value = order
+        // Re-sort what's already on screen without a network round-trip.
+        val current = _stationsState.value
+        if (current is StationsUiState.Success) {
+            _stationsState.value = StationsUiState.Success(sortStations(current.stations))
+        }
+    }
+
+    private fun sortStations(stations: List<StationEntity>): List<StationEntity> =
+        when (_sortOrder.value) {
+            SortOrder.VOTES -> stations.sortedByDescending { it.votes }
+            SortOrder.CLICKS -> stations.sortedByDescending { it.clickcount }
+            SortOrder.NAME -> stations.sortedBy { it.name.lowercase() }
+        }
+
+    private fun loadStations() {
         viewModelScope.launch {
             _stationsState.value = StationsUiState.Loading
             try {
-                val q = _searchQuery.value.trim().ifEmpty { null }
-                if (q == null) {
-                    val stations = repository.getTopStations()
-                    _stationsState.value = StationsUiState.Success(stations)
-                } else {
-                    val stations = repository.searchStations(name = q)
-                    _stationsState.value = StationsUiState.Success(stations)
+                val query = _searchQuery.value.trim().ifEmpty { null }
+                val genre = _selectedGenre.value
+                val stations = when {
+                    genre != null -> repository.searchStations(tag = genre)
+                    query != null -> repository.searchStations(name = query)
+                    else -> repository.getTopStations()
                 }
+                _stationsState.value = StationsUiState.Success(sortStations(stations))
             } catch (e: Exception) {
-                _stationsState.value = StationsUiState.Error(e.localizedMessage ?: "Грешка при търсене")
+                _stationsState.value =
+                    StationsUiState.Error(e.localizedMessage ?: "Грешка при зареждане на станции")
             }
         }
     }

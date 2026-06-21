@@ -22,8 +22,8 @@ class RadioRepository(
         return radioBrowserApi.getTopStations().map { it.toEntity() }
     }
 
-    suspend fun searchStations(name: String? = null): List<StationEntity> {
-        return radioBrowserApi.searchStations(name = name).map { it.toEntity() }
+    suspend fun searchStations(name: String? = null, tag: String? = null): List<StationEntity> {
+        return radioBrowserApi.searchStations(name = name, tag = tag).map { it.toEntity() }
     }
 
     suspend fun getStationById(uuid: String): StationEntity? {

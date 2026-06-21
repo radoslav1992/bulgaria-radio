@@ -2,6 +2,7 @@ package com.mindtocode.radiobulgaria
 
 import android.Manifest
 import android.app.Application
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +15,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +65,7 @@ import com.mindtocode.radiobulgaria.player.RadioPlaybackState
 import com.mindtocode.radiobulgaria.player.RadioPlayerManager
 import com.mindtocode.radiobulgaria.ui.RadioViewModel
 import com.mindtocode.radiobulgaria.ui.RadioViewModelFactory
+import com.mindtocode.radiobulgaria.ui.SortOrder
 import com.mindtocode.radiobulgaria.ui.StationsUiState
 import com.mindtocode.radiobulgaria.ui.theme.*
 import com.google.android.gms.ads.AdRequest
@@ -306,6 +309,8 @@ fun DiscoverTabScreen(
     favorites: List<StationEntity>
 ) {
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
+    val sortOrder by viewModel.sortOrder.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -394,6 +399,20 @@ fun DiscoverTabScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        GenreChipsRow(
+            selectedGenre = selectedGenre,
+            onGenreSelected = { viewModel.selectGenre(it) }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        SortRow(
+            sortOrder = sortOrder,
+            onSortSelected = { viewModel.setSortOrder(it) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         BannerAd(modifier = Modifier.fillMaxWidth())
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -458,6 +477,88 @@ fun DiscoverTabScreen(
                 }
             }
         }
+    }
+}
+
+/** Genre tags offered for one-tap browsing. Label is shown; value is the API tag. */
+private val radioGenres = listOf(
+    "Поп" to "pop",
+    "Фолк" to "folk",
+    "Попфолк" to "chalga",
+    "Новини" to "news",
+    "Рок" to "rock",
+    "Класическа" to "classical",
+    "Джаз" to "jazz",
+    "Денс" to "dance",
+    "Ретро" to "oldies"
+)
+
+@Composable
+fun GenreChipsRow(
+    selectedGenre: String?,
+    onGenreSelected: (String?) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterPill(label = "Всички", selected = selectedGenre == null) { onGenreSelected(null) }
+        radioGenres.forEach { (label, tag) ->
+            FilterPill(label = label, selected = selectedGenre == tag) { onGenreSelected(tag) }
+        }
+    }
+}
+
+@Composable
+fun SortRow(
+    sortOrder: SortOrder,
+    onSortSelected: (SortOrder) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.Sort,
+            contentDescription = null,
+            tint = FadedLabel,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        SortOrder.entries.forEach { order ->
+            FilterPill(label = order.label, selected = sortOrder == order) { onSortSelected(order) }
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+    }
+}
+
+@Composable
+fun FilterPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(if (selected) AmberGlow.copy(alpha = 0.18f) else WalnutMedium)
+            .border(
+                1.dp,
+                if (selected) AmberGlow.copy(alpha = 0.6f) else AmberGlow.copy(alpha = 0.15f),
+                RoundedCornerShape(100.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = FontFamily.Serif,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) AmberGlow else FadedLabel
+        )
     }
 }
 
@@ -1258,6 +1359,7 @@ fun FullscreenPlayerDialog(
     val isFav = favorites.any { it.stationuuid == station.stationuuid }
     var scaleVolume by remember { mutableStateOf(1.0f) }
     val isPlayingMode = playbackState is RadioPlaybackState.Playing
+    val context = LocalContext.current
 
     val infiniteTransition = rememberInfiniteTransition()
     val pilotGlow by infiniteTransition.animateFloat(
@@ -1354,16 +1456,41 @@ fun FullscreenPlayerDialog(
                                 letterSpacing = 3.sp
                             )
                         }
-                        IconButton(
-                            onClick = onToggleFavorite,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
-                                contentDescription = "Любими",
-                                tint = if (isFav) AmberBright else FadedLabel,
-                                modifier = Modifier.size(18.dp)
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(
+                                            Intent.EXTRA_TEXT,
+                                            "🎶 ${station.name}\n${station.urlResolved}\n\nЧрез приложението Радио България"
+                                        )
+                                    }
+                                    context.startActivity(
+                                        Intent.createChooser(shareIntent, "Сподели станция")
+                                    )
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = "Сподели",
+                                    tint = FadedLabel,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = onToggleFavorite,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isFav) Icons.Default.Star else Icons.Outlined.StarBorder,
+                                    contentDescription = "Любими",
+                                    tint = if (isFav) AmberBright else FadedLabel,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
 
