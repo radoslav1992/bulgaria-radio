@@ -35,6 +35,5 @@ data class NetworkStation(
     @Json(name = "countrycode") val countrycode: String?,
     @Json(name = "language") val language: String?,
     @Json(name = "votes") val votes: Int?,
-    @Json(name = "clickcount") val clickcount: Int?,
-    @Json(name = "lastcheckok") val lastcheckok: Int?
+    @Json(name = "clickcount") val clickcount: Int?
 )
