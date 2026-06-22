@@ -464,6 +464,13 @@ fun DiscoverTabScreen(
                         Text(text = "Няма намерени станции.", color = FadedLabel, textAlign = TextAlign.Center, fontFamily = FontFamily.Serif)
                     }
                 } else {
+                    Text(
+                        text = "${stationsList.size} ${if (stationsList.size == 1) "станция" else "станции"}",
+                        color = FadedLabel,
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxSize()
@@ -1395,7 +1402,7 @@ fun FullscreenPlayerDialog(
                         )
                     )
                     .safeDrawingPadding()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
