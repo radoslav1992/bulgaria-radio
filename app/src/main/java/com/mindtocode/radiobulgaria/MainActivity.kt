@@ -1401,7 +1401,8 @@ fun FullscreenPlayerDialog(
                             )
                         )
                     )
-                    .padding(horizontal = 16.dp, vertical = 56.dp),
+                    .safeDrawingPadding()
+                    .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 48.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -1842,6 +1843,8 @@ fun FullscreenPlayerDialog(
                         sleepTimerEndTime = sleepTimerEndTime,
                         onSetSleepTimer = onSetSleepTimer
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
