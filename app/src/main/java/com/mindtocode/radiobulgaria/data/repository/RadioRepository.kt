@@ -19,12 +19,27 @@ class RadioRepository(
     val recentlyPlayed: Flow<List<StationEntity>> = stationDao.getRecentlyPlayed()
 
     suspend fun getTopStations(): List<StationEntity> {
-        return radioBrowserApi.getTopStations().map { it.toEntity() }
+        return radioBrowserApi.getTopStations().toAvailableEntities()
     }
 
     suspend fun searchStations(name: String? = null, tag: String? = null): List<StationEntity> {
-        return radioBrowserApi.searchStations(name = name, tag = tag).map { it.toEntity() }
+        return radioBrowserApi.searchStations(name = name, tag = tag).toAvailableEntities()
     }
+
+    /**
+     * Maps network stations to entities while keeping only the ones a user can
+     * actually listen to:
+     *  - drops stations whose last health check failed (lastcheckok == 0),
+     *  - drops stations without a usable stream URL,
+     *  - removes duplicates that point at the same stream URL.
+     */
+    private fun List<NetworkStation>.toAvailableEntities(): List<StationEntity> =
+        asSequence()
+            .filter { (it.lastcheckok ?: 1) != 0 }
+            .map { it.toEntity() }
+            .filter { it.urlResolved.isNotBlank() }
+            .distinctBy { it.urlResolved.trim().lowercase() }
+            .toList()
 
     suspend fun getStationById(uuid: String): StationEntity? {
         return stationDao.getStationById(uuid)
