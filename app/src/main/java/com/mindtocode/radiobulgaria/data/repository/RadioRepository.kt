@@ -28,14 +28,13 @@ class RadioRepository(
 
     /**
      * Maps network stations to entities while keeping only the ones a user can
-     * actually listen to:
-     *  - drops stations whose last health check failed (lastcheckok == 0),
-     *  - drops stations without a usable stream URL,
-     *  - removes duplicates that point at the same stream URL.
+     * actually listen to. Broken stations are already excluded server-side via
+     * `hidebroken=true`; here we additionally:
+     *  - drop stations without a usable stream URL,
+     *  - remove duplicates that point at the same stream URL.
      */
     private fun List<NetworkStation>.toAvailableEntities(): List<StationEntity> =
         asSequence()
-            .filter { (it.lastcheckok ?: 1) != 0 }
             .map { it.toEntity() }
             .filter { it.urlResolved.isNotBlank() }
             .distinctBy { it.urlResolved.trim().lowercase() }
