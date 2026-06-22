@@ -43,7 +43,7 @@ is provided as an optional second listing language.
 
 Приложението съдържа реклами. При първо стартиране ще бъдете попитани за съгласие съгласно GDPR.
 
-Политика за поверителност: https://radiobulgaria.mindtocode.com/privacy-policy.html
+Политика за поверителност: https://bulgariaradio.com/privacy-policy/
 ```
 
 ---
@@ -83,7 +83,7 @@ Stations are provided by the public Radio Browser catalog. No sign-up required a
 
 This app contains ads. On first launch you will be asked for consent in accordance with GDPR.
 
-Privacy policy: https://radiobulgaria.mindtocode.com/privacy-policy.html
+Privacy policy: https://bulgariaradio.com/privacy-policy/
 ```
 
 ---
@@ -94,7 +94,8 @@ Privacy policy: https://radiobulgaria.mindtocode.com/privacy-policy.html
 - **Contains ads:** Yes
 - **Content rating:** complete the questionnaire (expected: Everyone / PEGI 3)
 - **Target audience:** 13+ (not directed at children)
-- **Privacy policy URL:** https://radiobulgaria.mindtocode.com/privacy-policy.html
+- **Privacy policy URL:** https://bulgariaradio.com/privacy-policy/
+- **Terms of service URL:** https://bulgariaradio.com/terms/
 - **Data safety:** declare AdMob's collection of Advertising ID + IP for ads;
   app's own favorites/history are stored on-device only (not "collected").
 - **Foreground service:** justify the `mediaPlayback` use case.
