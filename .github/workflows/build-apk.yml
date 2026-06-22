@@ -41,6 +41,36 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
 
+      - name: Check 16 KB native library alignment
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          WORK=$(mktemp -d)
+          unzip -o -q "$APK" 'lib/*' -d "$WORK" || true
+          mapfile -t SOS < <(find "$WORK" -name '*.so' 2>/dev/null)
+          if [ "${#SOS[@]}" -eq 0 ]; then
+            echo "No bundled native libraries — nothing to align."
+            exit 0
+          fi
+          BAD=0
+          for so in "${SOS[@]}"; do
+            max=0
+            for a in $(readelf -lW "$so" | awk '/LOAD/ {print $NF}'); do
+              d=$(printf '%d' "$a" 2>/dev/null || echo 0)
+              [ "$d" -gt "$max" ] && max=$d
+            done
+            if [ "$max" -ge 16384 ]; then
+              echo "OK    $(basename "$so") (max LOAD align=$max)"
+            else
+              echo "FAIL  $(basename "$so") (max LOAD align=$max, needs >= 16384)"
+              BAD=1
+            fi
+          done
+          if [ "$BAD" -ne 0 ]; then
+            echo "::warning::Some native libraries are not 16 KB aligned. Google Play requires 16 KB page support for apps targeting API 35+. Update the offending library or AGP."
+          else
+            echo "All bundled native libraries are 16 KB aligned."
+          fi
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
