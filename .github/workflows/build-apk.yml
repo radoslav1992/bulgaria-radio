@@ -3,9 +3,15 @@ name: Build APK
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Also build and sign the release AAB'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -43,13 +49,13 @@ jobs:
           retention-days: 14
 
       - name: Decode release keystore
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release)
         run: printf '%s' "$RELEASE_KEYSTORE" | base64 -d > my-upload-key.jks
         env:
           RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
 
       - name: Build release AAB
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release)
         run: ./gradlew :app:bundleRelease
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
@@ -57,7 +63,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload release AAB
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release)
         uses: actions/upload-artifact@v4
         with:
           name: radio-bulgaria-release
